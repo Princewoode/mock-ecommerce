@@ -5,7 +5,7 @@ export const products = [
     category: "Shoes",
     description: "Comfortable everyday sneakers for casual wear.",
     price: 59.99,
-    image: "👟",
+    image: "/products/sneakers.jpg",
   },
   {
     id: 2,
@@ -13,7 +13,7 @@ export const products = [
     category: "Bags",
     description: "A stylish backpack suitable for school, work, or travel.",
     price: 89.99,
-    image: "🎒",
+    image: "/products/backpack.jpg",
   },
   {
     id: 3,
@@ -21,6 +21,6 @@ export const products = [
     category: "Accessories",
     description: "A modern smartwatch with fitness and notification features.",
     price: 129.99,
-    image: "⌚",
+    image: "/products/watch.jpg",
   },
 ];

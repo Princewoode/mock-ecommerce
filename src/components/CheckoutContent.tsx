@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAllProducts, StoreProduct } from "@/utils/productStorage";
-
+import ProductVisual from "@/components/ProductVisual";
 type CartItem = {
   productId: number;
   quantity: number;
@@ -144,9 +144,7 @@ export default function CheckoutContent() {
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-gray-100 text-3xl">
-                  {product.image}
-                </div>
+                <ProductVisual image={product.image} alt={product.name} size="small" />
 
                 <div>
                   <p className="font-semibold text-gray-900">

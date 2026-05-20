@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
 import { getAllProducts, StoreProduct } from "@/utils/productStorage";
-
+import ProductVisual from "@/components/ProductVisual";
 type ProductDetailsContentProps = {
   productId: number;
 };
@@ -55,8 +55,8 @@ export default function ProductDetailsContent({
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-16">
       <section className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-        <div className="mb-6 flex h-48 items-center justify-center rounded-xl bg-gray-100 text-7xl">
-          {product.image}
+        <div className="mb-6">
+          <ProductVisual image={product.image} alt={product.name} size="large" />
         </div>
 
         <p className="text-sm text-gray-500">{product.category}</p>

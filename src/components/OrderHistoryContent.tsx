@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
+import ProductVisual from "@/components/ProductVisual";
 type OrderItem = {
   productId: number;
   name: string;
@@ -97,9 +97,7 @@ export default function OrderHistoryContent() {
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-                    {item.image}
-                  </div>
+                  <ProductVisual image={item.image} alt={item.name} size="small" />
 
                   <div>
                     <p className="font-semibold text-gray-900">{item.name}</p>

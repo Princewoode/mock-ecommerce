@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllProducts, StoreProduct } from "@/utils/productStorage";
-
+import ProductVisual from "@/components/ProductVisual";
 type CartItem = {
   productId: number;
   quantity: number;

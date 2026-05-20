@@ -1,6 +1,6 @@
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
-
+import ProductVisual from "@/components/ProductVisual";
 type ProductCardProps = {
   id?: number;
   name: string;
@@ -21,10 +21,10 @@ export default function ProductCard({
   return (
     <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {image && (
-        <div className="mb-5 flex h-36 items-center justify-center rounded-2xl bg-gray-100 text-6xl transition group-hover:bg-gray-200">
-          {image}
-        </div>
-      )}
+  <div className="mb-5">
+    <ProductVisual image={image} alt={name} size="medium" />
+  </div>
+)}
 
       <p className="text-sm font-medium text-gray-500">{category}</p>
 
