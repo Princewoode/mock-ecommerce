@@ -15,6 +15,7 @@ type OrderItem = {
 type Order = {
   id: string;
   createdAt: string;
+  status: string;
   customer: {
     fullName: string;
     email: string;
@@ -69,7 +70,7 @@ export default function OrderSuccessContent() {
 
         <p className="mt-2 text-sm text-gray-600">Order ID: {order.id}</p>
         <p className="text-sm text-gray-600">Date: {order.createdAt}</p>
-
+<p className="text-sm text-gray-600">Status: {order.status}</p>
         <div className="mt-4 space-y-4 border-t pt-4">
           {order.items.map((item) => (
             <div

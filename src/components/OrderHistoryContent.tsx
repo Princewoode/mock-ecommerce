@@ -15,6 +15,7 @@ type OrderItem = {
 type Order = {
   id: string;
   createdAt: string;
+  status: string;
   customer: {
     fullName: string;
     email: string;
@@ -79,6 +80,9 @@ export default function OrderHistoryContent() {
               <p className="mt-1 text-gray-600">
                 Customer: {order.customer.fullName}
               </p>
+              <p className="mt-1 font-semibold text-gray-900">
+  Status: {order.status || "Pending"}
+</p>
             </div>
 
             <p className="text-xl font-bold text-gray-900">

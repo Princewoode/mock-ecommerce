@@ -22,6 +22,7 @@ type OrderItem = {
 type Order = {
   id: string;
   createdAt: string;
+  status: string;
   customer: {
     fullName: string;
     email: string;
@@ -82,9 +83,10 @@ export default function CheckoutContent() {
     }
 
     const order: Order = {
-      id: `MS-${Date.now()}`,
-      createdAt: new Date().toLocaleString(),
-      customer: {
+  id: `MS-${Date.now()}`,
+  createdAt: new Date().toLocaleString(),
+  status: "Pending",
+  customer: {
         fullName,
         email,
         shippingAddress,
