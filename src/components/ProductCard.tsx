@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
+
 type ProductCardProps = {
   id?: number;
   name: string;
@@ -18,28 +19,28 @@ export default function ProductCard({
   image,
 }: ProductCardProps) {
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm">
+    <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {image && (
-        <div className="mb-4 flex h-32 items-center justify-center rounded-xl bg-gray-100 text-6xl">
+        <div className="mb-5 flex h-36 items-center justify-center rounded-2xl bg-gray-100 text-6xl transition group-hover:bg-gray-200">
           {image}
         </div>
       )}
 
-      <p className="text-sm text-gray-500">{category}</p>
+      <p className="text-sm font-medium text-gray-500">{category}</p>
 
-      <h2 className="mt-2 text-xl font-semibold text-gray-900">{name}</h2>
+      <h2 className="mt-2 text-xl font-bold text-gray-900">{name}</h2>
 
-      <p className="mt-2 text-gray-600">{description}</p>
+      <p className="mt-2 line-clamp-2 text-gray-600">{description}</p>
 
-      <p className="mt-4 text-lg font-bold text-gray-900">
+      <p className="mt-5 text-2xl font-bold text-gray-900">
         ${price.toFixed(2)}
       </p>
 
-      <div className="mt-4 flex gap-3">
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         {id && (
           <Link
             href={`/products/${id}`}
-            className="inline-block rounded-lg border border-gray-300 px-5 py-2 text-gray-900"
+            className="rounded-lg border border-gray-300 px-5 py-2 text-center text-gray-900 hover:bg-gray-50"
           >
             View Details
           </Link>

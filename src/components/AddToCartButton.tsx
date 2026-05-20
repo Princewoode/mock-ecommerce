@@ -43,8 +43,7 @@ export default function AddToCartButton({
     <button
       type="button"
       onClick={handleAddToCart}
-      className="inline-block rounded-lg bg-black px-5 py-2 text-white"
-    >
+className="rounded-lg bg-black px-5 py-2 text-white transition hover:bg-gray-800"    >
       Add to Cart
     </button>
   );
