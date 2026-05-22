@@ -3,7 +3,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllProducts, reduceStockAfterOrder, StoreProduct } from "@/utils/productStorage";
+import { StoreProduct } from "@/types/models";
+import { reduceStockAfterOrder } from "@/utils/productStorage";
+import { getProductCatalog } from "@/utils/productCatalogService";
+import { reduceDatabaseStockAfterOrder } from "@/utils/supabaseStockService";
 import ProductVisual from "@/components/ProductVisual";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { addOrder } from "@/utils/orderStorage";
@@ -48,8 +51,12 @@ export default function CheckoutContent() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    setCartItems(getCartItems());
-    setProductCatalog(getAllProducts());
+    async function loadCheckoutData() {
+  setCartItems(getCartItems());
+  setProductCatalog(await getProductCatalog());
+}
+
+loadCheckoutData();
     const customer = getCurrentCustomer();
 
 if (customer) {
@@ -79,7 +86,7 @@ if (customer) {
     return sum + product.price * product.quantity;
   }, 0);
 
-  function handlePlaceOrder(event: FormEvent<HTMLFormElement>) {
+  async function handlePlaceOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!fullName.trim() || !email.trim() || !shippingAddress.trim()) {
@@ -122,17 +129,27 @@ if (unavailableProduct) {
       total,
     };
 
-    addOrder(order);
+   const stockItems = checkoutProducts.map((product) => ({
+  productId: product.id,
+  quantity: product.quantity,
+}));
 
-reduceStockAfterOrder(
-  checkoutProducts.map((product) => ({
-    productId: product.id,
-    quantity: product.quantity,
-  }))
-);
+try {
+  await reduceDatabaseStockAfterOrder(stockItems);
+} catch (error) {
+  setFormError(
+    error instanceof Error
+      ? error.message
+      : "Failed to update database stock."
+  );
+  return;
+}
+
+addOrder(order);
+
+reduceStockAfterOrder(stockItems);
 
 clearCart();
-
     window.dispatchEvent(new Event("cartUpdated"));
 
     router.push("/order-success");

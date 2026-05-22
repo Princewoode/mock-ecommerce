@@ -4,7 +4,7 @@ import {
   removeLocalData,
   writeLocalData,
 } from "@/utils/localDatabase";
-import { getAllProducts } from "@/utils/productStorage";
+import { getProductCatalog } from "@/utils/productCatalogService";
 
 const CART_KEY = "cartItems";
 const OLD_CART_KEY = "cartProductId";
@@ -28,15 +28,21 @@ export function saveCartItems(items: CartItem[]) {
 export function clearCart() {
   removeLocalData(CART_KEY);
   removeLocalData(OLD_CART_KEY);
-  window.dispatchEvent(new Event(CART_EVENT));
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(CART_EVENT));
+  }
 }
 
 export function getCartCount(): number {
   return getCartItems().reduce((total, item) => total + item.quantity, 0);
 }
 
-export function addProductToCart(productId: number): CartActionResult {
-  const product = getAllProducts().find((item) => item.id === productId);
+export async function addProductToCart(
+  productId: number
+): Promise<CartActionResult> {
+  const products = await getProductCatalog();
+  const product = products.find((item) => item.id === productId);
 
   if (!product) {
     return {
@@ -79,7 +85,9 @@ export function addProductToCart(productId: number): CartActionResult {
   };
 }
 
-export function increaseCartItem(productId: number): CartActionResult {
+export async function increaseCartItem(
+  productId: number
+): Promise<CartActionResult> {
   return addProductToCart(productId);
 }
 

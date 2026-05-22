@@ -12,8 +12,8 @@ export default function AddToCartButton({
 }: AddToCartButtonProps) {
   const router = useRouter();
 
-  function handleAddToCart() {
-    const result = addProductToCart(productId);
+  async function handleAddToCart() {
+    const result = await addProductToCart(productId);
 
     if (!result.success) {
       alert(result.message);

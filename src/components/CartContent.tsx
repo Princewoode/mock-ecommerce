@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductVisual from "@/components/ProductVisual";
-import { getAllProducts, StoreProduct } from "@/utils/productStorage";
-import { CartItem } from "@/types/models";
+import { CartItem, StoreProduct } from "@/types/models";
 import {
   decreaseCartItem,
   getCartItems,
   increaseCartItem,
   removeCartItem,
 } from "@/utils/cartStorage";
+import { getProductCatalog } from "@/utils/productCatalogService";
 
 export default function CartContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -28,30 +28,30 @@ export default function CartContent() {
     };
   }, []);
 
-  function loadCart() {
+  async function loadCart() {
     setCartItems(getCartItems());
-    setProductCatalog(getAllProducts());
+    setProductCatalog(await getProductCatalog());
   }
 
-  function handleIncrease(productId: number) {
-    const result = increaseCartItem(productId);
+  async function handleIncrease(productId: number) {
+    const result = await increaseCartItem(productId);
 
     if (!result.success) {
       alert(result.message);
       return;
     }
 
-    loadCart();
+    await loadCart();
   }
 
-  function handleDecrease(productId: number) {
+  async function handleDecrease(productId: number) {
     decreaseCartItem(productId);
-    loadCart();
+    await loadCart();
   }
 
-  function handleRemove(productId: number) {
+  async function handleRemove(productId: number) {
     removeCartItem(productId);
-    loadCart();
+    await loadCart();
   }
 
   const cartProducts = cartItems
