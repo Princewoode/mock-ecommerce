@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { StoreProduct } from "@/types/models";
 import { reduceStockAfterOrder } from "@/utils/productStorage";
 import { getProductCatalog } from "@/utils/productCatalogService";
-import { reduceDatabaseStockAfterOrder } from "@/utils/supabaseStockService";
+import { createDatabaseOrder } from "@/utils/supabaseOrderService";
 import ProductVisual from "@/components/ProductVisual";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { addOrder } from "@/utils/orderStorage";
@@ -134,18 +134,20 @@ if (unavailableProduct) {
   quantity: product.quantity,
 }));
 
+let savedOrder = order;
+
 try {
-  await reduceDatabaseStockAfterOrder(stockItems);
+  savedOrder = await createDatabaseOrder(order);
 } catch (error) {
   setFormError(
     error instanceof Error
       ? error.message
-      : "Failed to update database stock."
+      : "Failed to save order to database."
   );
   return;
 }
 
-addOrder(order);
+addOrder(savedOrder);
 
 reduceStockAfterOrder(stockItems);
 
