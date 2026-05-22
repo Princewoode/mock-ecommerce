@@ -3,8 +3,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAllProducts, StoreProduct } from "@/utils/productStorage";
+import { getAllProducts, reduceStockAfterOrder, StoreProduct } from "@/utils/productStorage";
 import ProductVisual from "@/components/ProductVisual";
+import { getCurrentCustomer } from "@/utils/authStorage";
+import { addOrder } from "@/utils/orderStorage";
+import { clearCart, getCartItems } from "@/utils/cartStorage";
 type CartItem = {
   productId: number;
   quantity: number;
@@ -23,6 +26,7 @@ type Order = {
   id: string;
   createdAt: string;
   status: string;
+  paymentMethod: string;
   customer: {
     fullName: string;
     email: string;
@@ -40,13 +44,19 @@ export default function CheckoutContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("cartItems");
-    const items: CartItem[] = savedCart ? JSON.parse(savedCart) : [];
-    setCartItems(items);
+    setCartItems(getCartItems());
     setProductCatalog(getAllProducts());
+    const customer = getCurrentCustomer();
+
+if (customer) {
+  setFullName(customer.fullName);
+  setEmail(customer.email);
+  setShippingAddress(customer.shippingAddress);
+}
   }, []);
 
   const checkoutProducts = cartItems.flatMap((cartItem) => {
@@ -81,11 +91,21 @@ export default function CheckoutContent() {
       setFormError("Your cart is empty.");
       return;
     }
+const unavailableProduct = checkoutProducts.find(
+  (product) => product.quantity > product.stock
+);
 
+if (unavailableProduct) {
+  setFormError(
+    `${unavailableProduct.name} only has ${unavailableProduct.stock} item(s) left in stock.`
+  );
+  return;
+}
     const order: Order = {
   id: `MS-${Date.now()}`,
   createdAt: new Date().toLocaleString(),
   status: "Pending",
+  paymentMethod,
   customer: {
         fullName,
         email,
@@ -102,13 +122,16 @@ export default function CheckoutContent() {
       total,
     };
 
-    const savedOrders = localStorage.getItem("orders");
-    const orders: Order[] = savedOrders ? JSON.parse(savedOrders) : [];
+    addOrder(order);
 
-    localStorage.setItem("orders", JSON.stringify([order, ...orders]));
-    localStorage.setItem("lastOrder", JSON.stringify(order));
-    localStorage.removeItem("cartItems");
-    localStorage.removeItem("cartProductId");
+reduceStockAfterOrder(
+  checkoutProducts.map((product) => ({
+    productId: product.id,
+    quantity: product.quantity,
+  }))
+);
+
+clearCart();
 
     window.dispatchEvent(new Event("cartUpdated"));
 
@@ -222,7 +245,26 @@ export default function CheckoutContent() {
             rows={4}
           />
         </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700">
+    Payment Method
+  </label>
 
+  <select
+    value={paymentMethod}
+    onChange={(event) => setPaymentMethod(event.target.value)}
+    className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+  >
+    <option value="Cash on Delivery">Cash on Delivery</option>
+    <option value="Card Payment">Card Payment</option>
+    <option value="Mobile Money">Mobile Money</option>
+    <option value="Bank Transfer">Bank Transfer</option>
+  </select>
+
+  <p className="mt-2 text-sm text-gray-500">
+    This is a mock payment method. No real payment will be processed.
+  </p>
+</div>
         <button
           type="submit"
           className="rounded-lg bg-black px-6 py-3 text-white"

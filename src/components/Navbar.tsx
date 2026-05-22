@@ -2,37 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-type CartItem = {
-  productId: number;
-  quantity: number;
-};
+import { getCurrentCustomer } from "@/utils/authStorage";
+import { getCartCount } from "@/utils/cartStorage";
 
 export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
+  const [customerName, setCustomerName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     function updateCartCount() {
-      const savedCart = localStorage.getItem("cartItems");
-      const cartItems: CartItem[] = savedCart ? JSON.parse(savedCart) : [];
+  setCartCount(getCartCount());
+}
 
-      const totalItems = cartItems.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-
-      setCartCount(totalItems);
+    function updateCustomer() {
+      const customer = getCurrentCustomer();
+      setCustomerName(customer ? customer.fullName : "");
     }
 
     updateCartCount();
+    updateCustomer();
 
     window.addEventListener("cartUpdated", updateCartCount);
     window.addEventListener("storage", updateCartCount);
+    window.addEventListener("customerUpdated", updateCustomer);
 
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
       window.removeEventListener("storage", updateCartCount);
+      window.removeEventListener("customerUpdated", updateCustomer);
     };
   }, []);
 
@@ -42,6 +40,7 @@ export default function Navbar() {
     { href: "/cart", label: `Cart (${cartCount})` },
     { href: "/checkout", label: "Checkout" },
     { href: "/orders", label: "Orders" },
+    { href: "/account", label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account" },
     { href: "/admin", label: "Admin" },
   ];
 

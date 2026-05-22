@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductVisual from "@/components/ProductVisual";
+import { getCurrentCustomer } from "@/utils/authStorage";
+import { getOrdersByCustomerEmail } from "@/utils/orderStorage";
 type OrderItem = {
   productId: number;
   name: string;
@@ -16,6 +18,7 @@ type Order = {
   id: string;
   createdAt: string;
   status: string;
+  paymentMethod?: string;
   customer: {
     fullName: string;
     email: string;
@@ -27,24 +30,46 @@ type Order = {
 
 export default function OrderHistoryContent() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customerEmail, setCustomerEmail] = useState("");
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem("orders");
-    const storedOrders: Order[] = savedOrders ? JSON.parse(savedOrders) : [];
+    const customer = getCurrentCustomer();
 
-    setOrders(storedOrders);
+    if (!customer) {
+      setCustomerEmail("");
+      setOrders([]);
+      return;
+    }
+
+    const customerOrders = getOrdersByCustomerEmail(customer.email);
+
+    setCustomerEmail(customer.email);
+    setOrders(customerOrders);
   }, []);
 
-  function handleClearOrders() {
-    localStorage.removeItem("orders");
-    localStorage.removeItem("lastOrder");
-    setOrders([]);
+  if (!customerEmail) {
+    return (
+      <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+        <p className="text-gray-600">
+          Please login to view your personal order history.
+        </p>
+
+        <Link
+          href="/account"
+          className="mt-6 inline-block rounded-lg bg-black px-6 py-3 text-white"
+        >
+          Login or Register
+        </Link>
+      </div>
+    );
   }
 
   if (orders.length === 0) {
     return (
       <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-        <p className="text-gray-600">No orders found.</p>
+        <p className="text-gray-600">
+          No orders found for {customerEmail}.
+        </p>
 
         <Link
           href="/products"
@@ -58,16 +83,6 @@ export default function OrderHistoryContent() {
 
   return (
     <div className="mt-8 space-y-6">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={handleClearOrders}
-          className="rounded-lg border border-gray-300 px-5 py-2 text-gray-900"
-        >
-          Clear Order History
-        </button>
-      </div>
-
       {orders.map((order) => (
         <div key={order.id} className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b pb-4 md:flex-row">
@@ -77,12 +92,14 @@ export default function OrderHistoryContent() {
               </h2>
 
               <p className="mt-1 text-gray-600">{order.createdAt}</p>
-              <p className="mt-1 text-gray-600">
-                Customer: {order.customer.fullName}
-              </p>
+
               <p className="mt-1 font-semibold text-gray-900">
-  Status: {order.status || "Pending"}
-</p>
+                Status: {order.status || "Pending"}
+              </p>
+
+              <p className="mt-1 text-gray-600">
+                Payment: {order.paymentMethod || "Not specified"}
+              </p>
             </div>
 
             <p className="text-xl font-bold text-gray-900">
@@ -101,9 +118,7 @@ export default function OrderHistoryContent() {
 
                   <div>
                     <p className="font-semibold text-gray-900">{item.name}</p>
-                    <p className="text-gray-600">
-                      Quantity: {item.quantity}
-                    </p>
+                    <p className="text-gray-600">Quantity: {item.quantity}</p>
                   </div>
                 </div>
 

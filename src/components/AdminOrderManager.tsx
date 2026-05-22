@@ -1,28 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-type OrderItem = {
-  productId: number;
-  name: string;
-  category: string;
-  image: string;
-  price: number;
-  quantity: number;
-};
-
-type Order = {
-  id: string;
-  createdAt: string;
-  status?: string;
-  customer: {
-    fullName: string;
-    email: string;
-    shippingAddress: string;
-  };
-  items: OrderItem[];
-  total: number;
-};
+import {
+  clearOrders,
+  deleteOrder,
+  getOrders,
+  updateOrderStatus,
+} from "@/utils/orderStorage";
+import { Order } from "@/types/models";
 
 const orderStatuses = [
   "Pending",
@@ -37,49 +22,31 @@ export default function AdminOrderManager() {
 
   useEffect(() => {
     loadOrders();
+
+    window.addEventListener("ordersUpdated", loadOrders);
+
+    return () => {
+      window.removeEventListener("ordersUpdated", loadOrders);
+    };
   }, []);
 
   function loadOrders() {
-    const savedOrders = localStorage.getItem("orders");
-    const storedOrders: Order[] = savedOrders ? JSON.parse(savedOrders) : [];
-
-    setOrders(storedOrders);
-  }
-
-  function saveOrders(updatedOrders: Order[]) {
-    localStorage.setItem("orders", JSON.stringify(updatedOrders));
-    setOrders(updatedOrders);
-
-    if (updatedOrders.length > 0) {
-      localStorage.setItem("lastOrder", JSON.stringify(updatedOrders[0]));
-    } else {
-      localStorage.removeItem("lastOrder");
-    }
+    setOrders(getOrders());
   }
 
   function handleStatusChange(orderId: string, newStatus: string) {
-    const updatedOrders = orders.map((order) =>
-      order.id === orderId
-        ? {
-            ...order,
-            status: newStatus,
-          }
-        : order
-    );
-
-    saveOrders(updatedOrders);
+    updateOrderStatus(orderId, newStatus);
+    loadOrders();
   }
 
   function handleDeleteOrder(orderId: string) {
-    const updatedOrders = orders.filter((order) => order.id !== orderId);
-
-    saveOrders(updatedOrders);
+    deleteOrder(orderId);
+    loadOrders();
   }
 
   function handleClearOrders() {
-    localStorage.removeItem("orders");
-    localStorage.removeItem("lastOrder");
-    setOrders([]);
+    clearOrders();
+    loadOrders();
   }
 
   if (orders.length === 0) {
@@ -128,14 +95,21 @@ export default function AdminOrderManager() {
                 </h3>
 
                 <p className="mt-1 text-gray-600">{order.createdAt}</p>
+
                 <p className="mt-1 text-gray-600">
                   Customer: {order.customer.fullName}
                 </p>
+
                 <p className="mt-1 text-gray-600">
                   Email: {order.customer.email}
                 </p>
+
                 <p className="mt-1 text-gray-600">
                   Address: {order.customer.shippingAddress}
+                </p>
+
+                <p className="mt-1 text-gray-600">
+                  Payment: {order.paymentMethod || "Not specified"}
                 </p>
               </div>
 
@@ -199,6 +173,7 @@ export default function AdminOrderManager() {
 
             <div className="mt-5 flex justify-between border-t pt-5">
               <p className="text-lg font-bold text-gray-900">Total</p>
+
               <p className="text-lg font-bold text-gray-900">
                 ${order.total.toFixed(2)}
               </p>

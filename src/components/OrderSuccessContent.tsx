@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductVisual from "@/components/ProductVisual";
+import { getLastOrder } from "@/utils/orderStorage";
 type OrderItem = {
   productId: number;
   name: string;
@@ -16,6 +17,7 @@ type Order = {
   id: string;
   createdAt: string;
   status: string;
+  paymentMethod?: string;
   customer: {
     fullName: string;
     email: string;
@@ -29,11 +31,7 @@ export default function OrderSuccessContent() {
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    const savedOrder = localStorage.getItem("lastOrder");
-
-    if (savedOrder) {
-      setOrder(JSON.parse(savedOrder));
-    }
+    setOrder(getLastOrder());
   }, []);
 
   if (!order) {
@@ -62,7 +60,7 @@ export default function OrderSuccessContent() {
       </h1>
 
       <p className="mt-4 text-lg text-gray-600">
-        Thank you, {order.customer.fullName}. Your mock order has been saved.
+        Thank you, {order.customer.fullName}. Your order has been saved.
       </p>
 
       <div className="mx-auto mt-8 max-w-xl rounded-xl border border-gray-200 p-5 text-left">
@@ -71,6 +69,9 @@ export default function OrderSuccessContent() {
         <p className="mt-2 text-sm text-gray-600">Order ID: {order.id}</p>
         <p className="text-sm text-gray-600">Date: {order.createdAt}</p>
 <p className="text-sm text-gray-600">Status: {order.status}</p>
+<p className="text-sm text-gray-600">
+  Payment Method: {order.paymentMethod || "Not specified"}
+</p>
         <div className="mt-4 space-y-4 border-t pt-4">
           {order.items.map((item) => (
             <div

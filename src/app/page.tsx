@@ -90,6 +90,7 @@ export default function Home() {
             description={featuredProduct.description}
             price={featuredProduct.price}
             image={featuredProduct.image}
+            stock={featuredProduct.stock}
           />
         </div>
       </section>

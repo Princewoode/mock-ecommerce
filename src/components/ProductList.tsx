@@ -126,6 +126,7 @@ export default function ProductList() {
               description={product.description}
               price={product.price}
               image={product.image}
+              stock={product.stock}
             />
           ))}
         </div>

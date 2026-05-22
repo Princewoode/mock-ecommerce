@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductVisual from "@/components/ProductVisual";
+import ProductRatingSummary from "@/components/ProductRatingSummary";
 type ProductCardProps = {
   id?: number;
   name: string;
@@ -8,6 +9,7 @@ type ProductCardProps = {
   description: string;
   price: number;
   image?: string;
+  stock?: number;
 };
 
 export default function ProductCard({
@@ -17,19 +19,41 @@ export default function ProductCard({
   description,
   price,
   image,
+  stock = 0,
 }: ProductCardProps) {
+  const isOutOfStock = stock <= 0;
+  const isLowStock = stock > 0 && stock <= 3;
+
   return (
     <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {image && (
-  <div className="mb-5">
-    <ProductVisual image={image} alt={name} size="medium" />
-  </div>
-)}
+        <div className="mb-5">
+          <ProductVisual image={image} alt={name} size="medium" />
+        </div>
+      )}
 
-      <p className="text-sm font-medium text-gray-500">{category}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-500">{category}</p>
+
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            isOutOfStock
+              ? "bg-red-50 text-red-700"
+              : isLowStock
+                ? "bg-yellow-50 text-yellow-700"
+                : "bg-green-50 text-green-700"
+          }`}
+        >
+          {isOutOfStock
+            ? "Out of Stock"
+            : isLowStock
+              ? `Low Stock: ${stock}`
+              : `In Stock: ${stock}`}
+        </span>
+      </div>
 
       <h2 className="mt-2 text-xl font-bold text-gray-900">{name}</h2>
-
+{id && <ProductRatingSummary productId={id} />}
       <p className="mt-2 line-clamp-2 text-gray-600">{description}</p>
 
       <p className="mt-5 text-2xl font-bold text-gray-900">
@@ -46,7 +70,17 @@ export default function ProductCard({
           </Link>
         )}
 
-        {id && <AddToCartButton productId={id} />}
+        {id && !isOutOfStock && <AddToCartButton productId={id} />}
+
+        {isOutOfStock && (
+          <button
+            type="button"
+            disabled
+            className="rounded-lg bg-gray-200 px-5 py-2 text-gray-500"
+          >
+            Unavailable
+          </button>
+        )}
       </div>
     </div>
   );

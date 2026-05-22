@@ -1,16 +1,16 @@
 "use client";
-
 import { FormEvent, useEffect, useState } from "react";
-import { products as defaultProducts } from "@/data/products";
 import {
   clearCustomProducts,
   getCustomProducts,
+  getDefaultProductsWithStock,
   saveCustomProducts,
   StoreProduct,
 } from "@/utils/productStorage";
 
 export default function AdminProductManager() {
   const [customProducts, setCustomProducts] = useState<StoreProduct[]>([]);
+  const [defaultProducts, setDefaultProducts] = useState<StoreProduct[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
   const [name, setName] = useState("");
@@ -18,11 +18,23 @@ export default function AdminProductManager() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
+  const [stock, setStock] = useState("");
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
+  function loadProducts() {
     setCustomProducts(getCustomProducts());
-  }, []);
+    setDefaultProducts(getDefaultProductsWithStock());
+  }
+
+  loadProducts();
+
+  window.addEventListener("productsUpdated", loadProducts);
+
+  return () => {
+    window.removeEventListener("productsUpdated", loadProducts);
+  };
+}, []);
 
   function resetForm() {
     setEditingProductId(null);
@@ -31,6 +43,7 @@ export default function AdminProductManager() {
     setDescription("");
     setPrice("");
     setImage("");
+    setStock("");
     setFormError("");
   }
 
@@ -42,16 +55,27 @@ export default function AdminProductManager() {
       !category.trim() ||
       !description.trim() ||
       !price.trim() ||
-      !image.trim()
+      !image.trim() ||
+      !stock.trim()
     ) {
       setFormError("Please fill in all product fields.");
       return;
     }
 
     const numericPrice = Number(price);
+    const numericStock = Number(stock);
 
     if (Number.isNaN(numericPrice) || numericPrice <= 0) {
       setFormError("Please enter a valid product price.");
+      return;
+    }
+
+    if (
+      Number.isNaN(numericStock) ||
+      numericStock < 0 ||
+      !Number.isInteger(numericStock)
+    ) {
+      setFormError("Please enter a valid whole-number stock quantity.");
       return;
     }
 
@@ -67,6 +91,7 @@ export default function AdminProductManager() {
               description,
               price: numericPrice,
               image,
+              stock: numericStock,
             }
           : product
       );
@@ -78,6 +103,7 @@ export default function AdminProductManager() {
         description,
         price: numericPrice,
         image,
+        stock: numericStock,
       };
 
       updatedProducts = [newProduct, ...customProducts];
@@ -95,6 +121,7 @@ export default function AdminProductManager() {
     setDescription(product.description);
     setPrice(product.price.toString());
     setImage(product.image);
+    setStock(product.stock.toString());
     setFormError("");
   }
 
@@ -129,7 +156,7 @@ export default function AdminProductManager() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Add custom products to your mock store.
+            Add custom products with stock quantity to your mock store.
           </p>
         </div>
 
@@ -181,30 +208,46 @@ export default function AdminProductManager() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Price
-          </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Price
+            </label>
 
-          <input
-            type="number"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            placeholder="Example: 49.99"
-            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
-          />
+            <input
+              type="number"
+              value={price}
+              onChange={(event) => setPrice(event.target.value)}
+              placeholder="Example: 49.99"
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Stock Quantity
+            </label>
+
+            <input
+              type="number"
+              value={stock}
+              onChange={(event) => setStock(event.target.value)}
+              placeholder="Example: 10"
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Image Emoji
+            Image Path or Emoji
           </label>
 
           <input
             type="text"
             value={image}
             onChange={(event) => setImage(event.target.value)}
-            placeholder="Example: 🎧"
+            placeholder="Example: 🎧 or /products/headphones.jpg"
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
         </div>
@@ -245,17 +288,14 @@ export default function AdminProductManager() {
                 key={product.id}
                 className="flex items-center justify-between rounded-xl border border-gray-200 p-4"
               >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-                    {product.image}
-                  </div>
-
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {product.name}
-                    </p>
-                    <p className="text-gray-600">{product.category}</p>
-                  </div>
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {product.name}
+                  </p>
+                  <p className="text-gray-600">{product.category}</p>
+                  <p className="text-sm text-gray-500">
+                    Stock: {product.stock}
+                  </p>
                 </div>
 
                 <p className="font-bold text-gray-900">
@@ -301,17 +341,14 @@ export default function AdminProductManager() {
                   className="rounded-xl border border-gray-200 p-4"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-                        {product.image}
-                      </div>
-
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {product.name}
-                        </p>
-                        <p className="text-gray-600">{product.category}</p>
-                      </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {product.name}
+                      </p>
+                      <p className="text-gray-600">{product.category}</p>
+                      <p className="text-sm text-gray-500">
+                        Stock: {product.stock}
+                      </p>
                     </div>
 
                     <p className="font-bold text-gray-900">

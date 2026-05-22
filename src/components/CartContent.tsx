@@ -2,65 +2,63 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getAllProducts, StoreProduct } from "@/utils/productStorage";
 import ProductVisual from "@/components/ProductVisual";
-type CartItem = {
-  productId: number;
-  quantity: number;
-};
+import { getAllProducts, StoreProduct } from "@/utils/productStorage";
+import { CartItem } from "@/types/models";
+import {
+  decreaseCartItem,
+  getCartItems,
+  increaseCartItem,
+  removeCartItem,
+} from "@/utils/cartStorage";
 
 export default function CartContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
-  useEffect(() => {
-    const savedCart = localStorage.getItem("cartItems");
-    const items: CartItem[] = savedCart ? JSON.parse(savedCart) : [];
+  const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
 
-    setCartItems(items);
-    setProductCatalog(getAllProducts());
+  useEffect(() => {
+    loadCart();
+
+    window.addEventListener("cartUpdated", loadCart);
+    window.addEventListener("productsUpdated", loadCart);
+
+    return () => {
+      window.removeEventListener("cartUpdated", loadCart);
+      window.removeEventListener("productsUpdated", loadCart);
+    };
   }, []);
 
-  function updateCart(items: CartItem[]) {
-    setCartItems(items);
-    localStorage.setItem("cartItems", JSON.stringify(items));
-    window.dispatchEvent(new Event("cartUpdated"));
+  function loadCart() {
+    setCartItems(getCartItems());
+    setProductCatalog(getAllProducts());
   }
 
   function handleIncrease(productId: number) {
-    const updatedItems = cartItems.map((item) =>
-      item.productId === productId
-        ? { ...item, quantity: item.quantity + 1 }
-        : item
-    );
+    const result = increaseCartItem(productId);
 
-    updateCart(updatedItems);
+    if (!result.success) {
+      alert(result.message);
+      return;
+    }
+
+    loadCart();
   }
 
   function handleDecrease(productId: number) {
-    const updatedItems = cartItems
-      .map((item) =>
-        item.productId === productId
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-      .filter((item) => item.quantity > 0);
-
-    updateCart(updatedItems);
+    decreaseCartItem(productId);
+    loadCart();
   }
 
   function handleRemove(productId: number) {
-    const updatedItems = cartItems.filter(
-      (item) => item.productId !== productId
-    );
-
-    updateCart(updatedItems);
+    removeCartItem(productId);
+    loadCart();
   }
 
   const cartProducts = cartItems
     .map((cartItem) => {
       const product = productCatalog.find(
-  (item) => item.id === cartItem.productId
-);
+        (item) => item.id === cartItem.productId
+      );
 
       if (!product) {
         return null;
@@ -107,12 +105,14 @@ const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
           return (
             <div
               key={product.id}
-              className="flex items-center justify-between border-b pb-6"
+              className="flex flex-col justify-between gap-5 border-b pb-6 md:flex-row md:items-center"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-gray-100 text-4xl">
-                  {product.image}
-                </div>
+                <ProductVisual
+                  image={product.image}
+                  alt={product.name}
+                  size="small"
+                />
 
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">
@@ -120,6 +120,10 @@ const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
                   </h2>
 
                   <p className="mt-1 text-gray-600">{product.category}</p>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Available stock: {product.stock}
+                  </p>
 
                   <p className="mt-1 font-bold text-gray-900">
                     ${product.price.toFixed(2)}
@@ -134,9 +138,7 @@ const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
                       -
                     </button>
 
-                    <span className="font-semibold">
-                      {product.quantity}
-                    </span>
+                    <span className="font-semibold">{product.quantity}</span>
 
                     <button
                       type="button"
@@ -168,9 +170,7 @@ const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
       <div className="mt-6 flex items-center justify-between">
         <p className="text-xl font-bold text-gray-900">Total</p>
 
-        <p className="text-xl font-bold text-gray-900">
-          ${total.toFixed(2)}
-        </p>
+        <p className="text-xl font-bold text-gray-900">${total.toFixed(2)}</p>
       </div>
 
       <Link
