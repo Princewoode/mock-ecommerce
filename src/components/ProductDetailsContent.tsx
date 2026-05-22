@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
-import { getProductById, StoreProduct } from "@/utils/productStorage";
+import { StoreProduct } from "@/types/models";
+import { getProductCatalog } from "@/utils/productCatalogService";
 import ProductVisual from "@/components/ProductVisual";
 import ProductReviews from "@/components/ProductReviews";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
@@ -19,10 +20,22 @@ export default function ProductDetailsContent({
   );
 
   useEffect(() => {
-    const foundProduct = getProductById(productId);
+  async function loadProduct() {
+    const products = await getProductCatalog();
+    const foundProduct =
+      products.find((item) => item.id === productId) || null;
 
     setProduct(foundProduct);
-  }, [productId]);
+  }
+
+  loadProduct();
+
+  window.addEventListener("productsUpdated", loadProduct);
+
+  return () => {
+    window.removeEventListener("productsUpdated", loadProduct);
+  };
+}, [productId]);
 
   if (product === undefined) {
     return (

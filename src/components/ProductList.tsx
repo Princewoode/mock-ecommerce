@@ -2,17 +2,24 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
-import { getAllProducts, StoreProduct } from "@/utils/productStorage";
+import { StoreProduct } from "@/types/models";
+import { getProductCatalog } from "@/utils/productCatalogService";
 
 export default function ProductList() {
   const [allProducts, setAllProducts] = useState<StoreProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortOrder, setSortOrder] = useState("default");
 
   useEffect(() => {
-    function loadProducts() {
-      setAllProducts(getAllProducts());
+    async function loadProducts() {
+      setIsLoading(true);
+
+      const products = await getProductCatalog();
+
+      setAllProducts(products);
+      setIsLoading(false);
     }
 
     loadProducts();
@@ -104,32 +111,40 @@ export default function ProductList() {
         </div>
       </div>
 
-      <p className="mt-6 text-gray-600">
-        Showing {filteredProducts.length} product
-        {filteredProducts.length === 1 ? "" : "s"}
-      </p>
-
-      {filteredProducts.length === 0 ? (
+      {isLoading ? (
         <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-          <p className="text-gray-600">
-            No products found. Try another search or category.
-          </p>
+          <p className="text-gray-600">Loading products...</p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              category={product.category}
-              description={product.description}
-              price={product.price}
-              image={product.image}
-              stock={product.stock}
-            />
-          ))}
-        </div>
+        <>
+          <p className="mt-6 text-gray-600">
+            Showing {filteredProducts.length} product
+            {filteredProducts.length === 1 ? "" : "s"}
+          </p>
+
+          {filteredProducts.length === 0 ? (
+            <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+              <p className="text-gray-600">
+                No products found. Try another search or category.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  category={product.category}
+                  description={product.description}
+                  price={product.price}
+                  image={product.image}
+                  stock={product.stock}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </>
   );
