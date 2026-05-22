@@ -3,49 +3,55 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductVisual from "@/components/ProductVisual";
+import { Order } from "@/types/models";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { getOrdersByCustomerEmail } from "@/utils/orderStorage";
-type OrderItem = {
-  productId: number;
-  name: string;
-  category: string;
-  image: string;
-  price: number;
-  quantity: number;
-};
-
-type Order = {
-  id: string;
-  createdAt: string;
-  status: string;
-  paymentMethod?: string;
-  customer: {
-    fullName: string;
-    email: string;
-    shippingAddress: string;
-  };
-  items: OrderItem[];
-  total: number;
-};
+import { getCustomerDatabaseOrders } from "@/utils/databaseOrderService";
 
 export default function OrderHistoryContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerEmail, setCustomerEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const customer = getCurrentCustomer();
+    async function loadOrders() {
+      const customer = getCurrentCustomer();
 
-    if (!customer) {
-      setCustomerEmail("");
-      setOrders([]);
-      return;
+      if (!customer) {
+        setCustomerEmail("");
+        setOrders([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setCustomerEmail(customer.email);
+
+      try {
+        const databaseOrders = await getCustomerDatabaseOrders(customer.email);
+        setOrders(databaseOrders);
+        setMessage("");
+      } catch (error) {
+        const fallbackOrders = getOrdersByCustomerEmail(customer.email);
+        setOrders(fallbackOrders);
+        setMessage(
+          "Could not load database orders. Showing local fallback orders."
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    const customerOrders = getOrdersByCustomerEmail(customer.email);
-
-    setCustomerEmail(customer.email);
-    setOrders(customerOrders);
+    loadOrders();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+        <p className="text-gray-600">Loading your orders...</p>
+      </div>
+    );
+  }
 
   if (!customerEmail) {
     return (
@@ -67,9 +73,7 @@ export default function OrderHistoryContent() {
   if (orders.length === 0) {
     return (
       <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-        <p className="text-gray-600">
-          No orders found for {customerEmail}.
-        </p>
+        <p className="text-gray-600">No orders found for {customerEmail}.</p>
 
         <Link
           href="/products"
@@ -83,6 +87,12 @@ export default function OrderHistoryContent() {
 
   return (
     <div className="mt-8 space-y-6">
+      {message && (
+        <div className="rounded-lg bg-yellow-50 p-4 text-yellow-700">
+          {message}
+        </div>
+      )}
+
       {orders.map((order) => (
         <div key={order.id} className="rounded-2xl bg-white p-6 shadow-sm">
           <div className="flex flex-col justify-between gap-3 border-b pb-4 md:flex-row">
@@ -110,7 +120,7 @@ export default function OrderHistoryContent() {
           <div className="mt-4 space-y-4">
             {order.items.map((item) => (
               <div
-                key={item.productId}
+                key={`${order.id}-${item.productId}`}
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center gap-4">

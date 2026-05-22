@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  clearOrders,
-  deleteOrder,
-  getOrders,
-  updateOrderStatus,
-} from "@/utils/orderStorage";
+import ProductVisual from "@/components/ProductVisual";
 import { Order } from "@/types/models";
+import {
+  deleteDatabaseOrder,
+  getAdminDatabaseOrders,
+  updateDatabaseOrderStatus,
+} from "@/utils/databaseOrderService";
 
 const orderStatuses = [
   "Pending",
@@ -19,34 +19,64 @@ const orderStatuses = [
 
 export default function AdminOrderManager() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadOrders();
-
-    window.addEventListener("ordersUpdated", loadOrders);
-
-    return () => {
-      window.removeEventListener("ordersUpdated", loadOrders);
-    };
   }, []);
 
-  function loadOrders() {
-    setOrders(getOrders());
+  async function loadOrders() {
+    try {
+      setIsLoading(true);
+      const databaseOrders = await getAdminDatabaseOrders();
+      setOrders(databaseOrders);
+      setMessage("");
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to load database orders."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  function handleStatusChange(orderId: string, newStatus: string) {
-    updateOrderStatus(orderId, newStatus);
-    loadOrders();
+  async function handleStatusChange(orderId: string, newStatus: string) {
+    try {
+      await updateDatabaseOrderStatus(orderId, newStatus);
+      setMessage("Order status updated successfully.");
+      await loadOrders();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Failed to update order status."
+      );
+    }
   }
 
-  function handleDeleteOrder(orderId: string) {
-    deleteOrder(orderId);
-    loadOrders();
+  async function handleDeleteOrder(orderId: string) {
+    try {
+      await deleteDatabaseOrder(orderId);
+      setMessage("Order deleted successfully.");
+      await loadOrders();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Failed to delete order."
+      );
+    }
   }
 
-  function handleClearOrders() {
-    clearOrders();
-    loadOrders();
+  if (isLoading) {
+    return (
+      <div className="mt-10 rounded-2xl bg-white p-6 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Admin Order Management
+        </h2>
+
+        <p className="mt-4 text-gray-600">Loading database orders...</p>
+      </div>
+    );
   }
 
   if (orders.length === 0) {
@@ -55,6 +85,12 @@ export default function AdminOrderManager() {
         <h2 className="text-2xl font-bold text-gray-900">
           Admin Order Management
         </h2>
+
+        {message && (
+          <div className="mt-4 rounded-lg bg-gray-50 p-4 text-gray-700">
+            {message}
+          </div>
+        )}
 
         <p className="mt-4 text-gray-600">
           No customer orders have been placed yet.
@@ -72,18 +108,16 @@ export default function AdminOrderManager() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            View and update customer order statuses.
+            View and update Supabase customer order statuses.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={handleClearOrders}
-          className="rounded-lg border border-red-300 px-5 py-2 text-red-600"
-        >
-          Clear All Orders
-        </button>
       </div>
+
+      {message && (
+        <div className="mt-5 rounded-lg bg-gray-50 p-4 text-gray-700">
+          {message}
+        </div>
+      )}
 
       <div className="mt-6 space-y-6">
         {orders.map((order) => (
@@ -145,13 +179,15 @@ export default function AdminOrderManager() {
             <div className="mt-5 space-y-4 border-t pt-5">
               {order.items.map((item) => (
                 <div
-                  key={item.productId}
+                  key={`${order.id}-${item.productId}`}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-                      {item.image}
-                    </div>
+                    <ProductVisual
+                      image={item.image}
+                      alt={item.name}
+                      size="small"
+                    />
 
                     <div>
                       <p className="font-semibold text-gray-900">
