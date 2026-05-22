@@ -1,16 +1,16 @@
 "use client";
+
 import { FormEvent, useEffect, useState } from "react";
 import {
-  clearCustomProducts,
-  getCustomProducts,
-  getDefaultProductsWithStock,
-  saveCustomProducts,
-  StoreProduct,
-} from "@/utils/productStorage";
+  AdminProduct,
+  createAdminProduct,
+  deleteAdminProduct,
+  getAdminProducts,
+  updateAdminProduct,
+} from "@/utils/adminProductApi";
 
 export default function AdminProductManager() {
-  const [customProducts, setCustomProducts] = useState<StoreProduct[]>([]);
-  const [defaultProducts, setDefaultProducts] = useState<StoreProduct[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
   const [name, setName] = useState("");
@@ -20,21 +20,31 @@ export default function AdminProductManager() {
   const [image, setImage] = useState("");
   const [stock, setStock] = useState("");
   const [formError, setFormError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  function loadProducts() {
-    setCustomProducts(getCustomProducts());
-    setDefaultProducts(getDefaultProductsWithStock());
+    loadProducts();
+  }, []);
+
+  async function loadProducts() {
+    try {
+      setIsLoading(true);
+      setFormError("");
+
+      const databaseProducts = await getAdminProducts();
+
+      setProducts(databaseProducts);
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load database products."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
-
-  loadProducts();
-
-  window.addEventListener("productsUpdated", loadProducts);
-
-  return () => {
-    window.removeEventListener("productsUpdated", loadProducts);
-  };
-}, []);
 
   function resetForm() {
     setEditingProductId(null);
@@ -47,9 +57,7 @@ export default function AdminProductManager() {
     setFormError("");
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  function validateForm() {
     if (
       !name.trim() ||
       !category.trim() ||
@@ -58,16 +66,14 @@ export default function AdminProductManager() {
       !image.trim() ||
       !stock.trim()
     ) {
-      setFormError("Please fill in all product fields.");
-      return;
+      return "Please fill in all product fields.";
     }
 
     const numericPrice = Number(price);
     const numericStock = Number(stock);
 
     if (Number.isNaN(numericPrice) || numericPrice <= 0) {
-      setFormError("Please enter a valid product price.");
-      return;
+      return "Please enter a valid product price.";
     }
 
     if (
@@ -75,46 +81,56 @@ export default function AdminProductManager() {
       numericStock < 0 ||
       !Number.isInteger(numericStock)
     ) {
-      setFormError("Please enter a valid whole-number stock quantity.");
+      return "Please enter a valid whole-number stock quantity.";
+    }
+
+    return "";
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationMessage = validateForm();
+
+    if (validationMessage) {
+      setFormError(validationMessage);
       return;
     }
 
-    let updatedProducts: StoreProduct[];
+    const payload = {
+      id: editingProductId || undefined,
+      name,
+      category,
+      description,
+      price: Number(price),
+      image,
+      stock: Number(stock),
+    };
 
-    if (editingProductId) {
-      updatedProducts = customProducts.map((product) =>
-        product.id === editingProductId
-          ? {
-              ...product,
-              name,
-              category,
-              description,
-              price: numericPrice,
-              image,
-              stock: numericStock,
-            }
-          : product
+    try {
+      setFormError("");
+      setStatusMessage("");
+
+      if (editingProductId) {
+        const result = await updateAdminProduct(payload);
+        setStatusMessage(result.message || "Product updated successfully.");
+      } else {
+        const result = await createAdminProduct(payload);
+        setStatusMessage(result.message || "Product created successfully.");
+      }
+
+      resetForm();
+      await loadProducts();
+
+      window.dispatchEvent(new Event("productsUpdated"));
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : "Product save failed."
       );
-    } else {
-      const newProduct: StoreProduct = {
-        id: Date.now(),
-        name,
-        category,
-        description,
-        price: numericPrice,
-        image,
-        stock: numericStock,
-      };
-
-      updatedProducts = [newProduct, ...customProducts];
     }
-
-    setCustomProducts(updatedProducts);
-    saveCustomProducts(updatedProducts);
-    resetForm();
   }
 
-  function handleEdit(product: StoreProduct) {
+  function handleEdit(product: AdminProduct) {
     setEditingProductId(product.id);
     setName(product.name);
     setCategory(product.category);
@@ -123,25 +139,30 @@ export default function AdminProductManager() {
     setImage(product.image);
     setStock(product.stock.toString());
     setFormError("");
+    setStatusMessage("");
   }
 
-  function handleDelete(productId: number) {
-    const updatedProducts = customProducts.filter(
-      (product) => product.id !== productId
-    );
+  async function handleDelete(productId: number) {
+    try {
+      setFormError("");
+      setStatusMessage("");
 
-    setCustomProducts(updatedProducts);
-    saveCustomProducts(updatedProducts);
+      const result = await deleteAdminProduct(productId);
 
-    if (editingProductId === productId) {
-      resetForm();
+      setStatusMessage(result.message || "Product deleted successfully.");
+
+      if (editingProductId === productId) {
+        resetForm();
+      }
+
+      await loadProducts();
+
+      window.dispatchEvent(new Event("productsUpdated"));
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : "Product delete failed."
+      );
     }
-  }
-
-  function handleResetCustomProducts() {
-    clearCustomProducts();
-    setCustomProducts([]);
-    resetForm();
   }
 
   return (
@@ -152,17 +173,23 @@ export default function AdminProductManager() {
       >
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {editingProductId ? "Edit Product" : "Add Product"}
+            {editingProductId ? "Edit Database Product" : "Add Database Product"}
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Add custom products with stock quantity to your mock store.
+            Manage products directly in your Supabase database.
           </p>
         </div>
 
         {formError && (
           <div className="rounded-lg bg-red-50 p-4 text-red-700">
             {formError}
+          </div>
+        )}
+
+        {statusMessage && (
+          <div className="rounded-lg bg-green-50 p-4 text-green-700">
+            {statusMessage}
           </div>
         )}
 
@@ -272,101 +299,60 @@ export default function AdminProductManager() {
         </div>
       </form>
 
-      <div className="space-y-8">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Default Products
-          </h2>
+      <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <h2 className="text-2xl font-bold text-gray-900">Database Products</h2>
 
-          <p className="mt-2 text-gray-600">
-            These products are built into the project and are read-only.
-          </p>
+        <p className="mt-2 text-gray-600">
+          These products are loaded from Supabase.
+        </p>
 
+        {isLoading ? (
+          <p className="mt-6 text-gray-600">Loading products...</p>
+        ) : products.length === 0 ? (
+          <p className="mt-6 text-gray-600">No database products found.</p>
+        ) : (
           <div className="mt-6 space-y-4">
-            {defaultProducts.map((product) => (
+            {products.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center justify-between rounded-xl border border-gray-200 p-4"
+                className="rounded-xl border border-gray-200 p-4"
               >
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {product.name}
-                  </p>
-                  <p className="text-gray-600">{product.category}</p>
-                  <p className="text-sm text-gray-500">
-                    Stock: {product.stock}
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {product.name}
+                    </p>
+
+                    <p className="text-gray-600">{product.category}</p>
+
+                    <p className="text-sm text-gray-500">
+                      Stock: {product.stock}
+                    </p>
+
+                    {product.isDefault && (
+                      <p className="mt-1 text-xs font-semibold text-blue-700">
+                        Default product
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="font-bold text-gray-900">
+                    ${product.price.toFixed(2)}
                   </p>
                 </div>
 
-                <p className="font-bold text-gray-900">
-                  ${product.price.toFixed(2)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+                <p className="mt-3 text-gray-600">{product.description}</p>
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Custom Products
-              </h2>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(product)}
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
+                  >
+                    Edit
+                  </button>
 
-              <p className="mt-2 text-gray-600">
-                These products are saved in your browser.
-              </p>
-            </div>
-
-            {customProducts.length > 0 && (
-              <button
-                type="button"
-                onClick={handleResetCustomProducts}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-
-          {customProducts.length === 0 ? (
-            <p className="mt-6 text-gray-600">
-              No custom products added yet.
-            </p>
-          ) : (
-            <div className="mt-6 space-y-4">
-              {customProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="rounded-xl border border-gray-200 p-4"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {product.name}
-                      </p>
-                      <p className="text-gray-600">{product.category}</p>
-                      <p className="text-sm text-gray-500">
-                        Stock: {product.stock}
-                      </p>
-                    </div>
-
-                    <p className="font-bold text-gray-900">
-                      ${product.price.toFixed(2)}
-                    </p>
-                  </div>
-
-                  <p className="mt-3 text-gray-600">{product.description}</p>
-
-                  <div className="mt-4 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(product)}
-                      className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
-                    >
-                      Edit
-                    </button>
-
+                  {!product.isDefault && (
                     <button
                       type="button"
                       onClick={() => handleDelete(product.id)}
@@ -374,12 +360,12 @@ export default function AdminProductManager() {
                     >
                       Delete
                     </button>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

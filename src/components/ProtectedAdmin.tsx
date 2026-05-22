@@ -6,6 +6,7 @@ import AdminOrderManager from "@/components/AdminOrderManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_AUTH_KEY = "mockAdminLoggedIn";
+const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
 
 export default function ProtectedAdmin() {
   const [isChecking, setIsChecking] = useState(true);
@@ -27,22 +28,24 @@ export default function ProtectedAdmin() {
     event.preventDefault();
 
     if (password === ADMIN_PASSWORD) {
-      localStorage.setItem(ADMIN_AUTH_KEY, "true");
-      setIsLoggedIn(true);
-      setPassword("");
-      setLoginError("");
-      return;
-    }
+  localStorage.setItem(ADMIN_AUTH_KEY, "true");
+  sessionStorage.setItem(ADMIN_API_PASSWORD_KEY, password);
+  setIsLoggedIn(true);
+  setPassword("");
+  setLoginError("");
+  return;
+}
 
     setLoginError("Incorrect admin password.");
   }
 
   function handleLogout() {
-    localStorage.removeItem(ADMIN_AUTH_KEY);
-    setIsLoggedIn(false);
-    setPassword("");
-    setLoginError("");
-  }
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+  sessionStorage.removeItem(ADMIN_API_PASSWORD_KEY);
+  setIsLoggedIn(false);
+  setPassword("");
+  setLoginError("");
+}
 
   if (isChecking) {
     return (
