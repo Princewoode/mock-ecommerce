@@ -3,13 +3,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { getCurrentCustomer } from "@/utils/authStorage";
+import { addReview, getReviewsByProduct, ProductReview } from "@/utils/reviewStorage";
 import {
-  addReview,
-  deleteReview,
-  getAverageRating,
-  getReviewsByProduct,
-  ProductReview,
-} from "@/utils/reviewStorage";
+  createDatabaseReview,
+  getDatabaseReviewsByProduct,
+} from "@/utils/databaseReviewService";
 
 type ProductReviewsProps = {
   productId: number;
@@ -20,14 +18,11 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const [rating, setRating] = useState("5");
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   const customer = getCurrentCustomer();
 
   useEffect(() => {
-    function loadReviews() {
-      setReviews(getReviewsByProduct(productId));
-    }
-
     loadReviews();
 
     window.addEventListener("reviewsUpdated", loadReviews);
@@ -37,13 +32,36 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
     };
   }, [productId]);
 
-  const ratingData = getAverageRating(productId);
+  async function loadReviews() {
+    try {
+      setIsLoading(true);
+      const databaseReviews = await getDatabaseReviewsByProduct(productId);
+      setReviews(databaseReviews);
+    } catch {
+      setReviews(getReviewsByProduct(productId));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const ratingData =
+    reviews.length === 0
+      ? { average: 0, count: 0 }
+      : {
+          average:
+            reviews.reduce((sum, review) => sum + review.rating, 0) /
+            reviews.length,
+          count: reviews.length,
+        };
 
   const customerReview = customer
-    ? reviews.find((review) => review.customerId === customer.id)
+    ? reviews.find(
+        (review) =>
+          review.customerEmail.toLowerCase() === customer.email.toLowerCase()
+      )
     : null;
 
-  function handleSubmitReview(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!customer) {
@@ -72,16 +90,21 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
       createdAt: new Date().toLocaleString(),
     };
 
-    addReview(newReview);
+    try {
+      await createDatabaseReview(newReview);
+      addReview(newReview);
 
-    setRating("5");
-    setComment("");
-    setMessage("Review submitted successfully.");
-  }
+      setRating("5");
+      setComment("");
+      setMessage("Review submitted successfully.");
 
-  function handleDeleteOwnReview(reviewId: string) {
-    deleteReview(reviewId);
-    setMessage("Your review has been deleted.");
+      window.dispatchEvent(new Event("reviewsUpdated"));
+      await loadReviews();
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Review submission failed."
+      );
+    }
   }
 
   return (
@@ -92,7 +115,9 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
             Customer Reviews
           </h2>
 
-          {ratingData.count === 0 ? (
+          {isLoading ? (
+            <p className="mt-2 text-gray-600">Loading reviews...</p>
+          ) : ratingData.count === 0 ? (
             <p className="mt-2 text-gray-600">No reviews yet.</p>
           ) : (
             <p className="mt-2 text-gray-600">
@@ -121,14 +146,6 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
           <p className="font-semibold text-gray-900">
             You have already reviewed this product.
           </p>
-
-          <button
-            type="button"
-            onClick={() => handleDeleteOwnReview(customerReview.id)}
-            className="mt-4 rounded-lg border border-red-300 px-5 py-2 text-red-600"
-          >
-            Delete My Review
-          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmitReview} className="mt-6 space-y-5">

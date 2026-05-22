@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getDatabaseReviewsByProduct } from "@/utils/databaseReviewService";
 import { getAverageRating } from "@/utils/reviewStorage";
 
 type ProductRatingSummaryProps = {
@@ -14,11 +15,26 @@ export default function ProductRatingSummary({
   const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
-    function loadRating() {
-      const ratingData = getAverageRating(productId);
+    async function loadRating() {
+      try {
+        const reviews = await getDatabaseReviewsByProduct(productId);
 
-      setAverageRating(ratingData.average);
-      setReviewCount(ratingData.count);
+        if (reviews.length === 0) {
+          setAverageRating(0);
+          setReviewCount(0);
+          return;
+        }
+
+        const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+
+        setAverageRating(total / reviews.length);
+        setReviewCount(reviews.length);
+      } catch {
+        const fallbackRating = getAverageRating(productId);
+
+        setAverageRating(fallbackRating.average);
+        setReviewCount(fallbackRating.count);
+      }
     }
 
     loadRating();
