@@ -3,73 +3,48 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { StoreProduct } from "@/types/models";
-import { reduceStockAfterOrder } from "@/utils/productStorage";
-import { getProductCatalog } from "@/utils/productCatalogService";
-import { createDatabaseOrder } from "@/utils/supabaseOrderService";
 import ProductVisual from "@/components/ProductVisual";
+import { CartItem, Order, StoreProduct } from "@/types/models";
 import { getCurrentCustomer } from "@/utils/authStorage";
-import { addOrder } from "@/utils/orderStorage";
 import { clearCart, getCartItems } from "@/utils/cartStorage";
-type CartItem = {
-  productId: number;
-  quantity: number;
-};
-
-type OrderItem = {
-  productId: number;
-  name: string;
-  category: string;
-  image: string;
-  price: number;
-  quantity: number;
-};
-
-type Order = {
-  id: string;
-  createdAt: string;
-  status: string;
-  paymentMethod: string;
-  customer: {
-    fullName: string;
-    email: string;
-    shippingAddress: string;
-  };
-  items: OrderItem[];
-  total: number;
-};
+import { addOrder } from "@/utils/orderStorage";
+import { getProductCatalog } from "@/utils/productCatalogService";
+import { reduceStockAfterOrder } from "@/utils/productStorage";
+import { createDatabaseOrder } from "@/utils/supabaseOrderService";
 
 export default function CheckoutContent() {
   const router = useRouter();
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
- const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
+  const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
   const [formError, setFormError] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   useEffect(() => {
     async function loadCheckoutData() {
-  setCartItems(getCartItems());
-  setProductCatalog(await getProductCatalog());
-}
+      setCartItems(getCartItems());
+      setProductCatalog(await getProductCatalog());
 
-loadCheckoutData();
-    const customer = getCurrentCustomer();
+      const customer = getCurrentCustomer();
 
-if (customer) {
-  setFullName(customer.fullName);
-  setEmail(customer.email);
-  setShippingAddress(customer.shippingAddress);
-}
+      if (customer) {
+        setFullName(customer.fullName);
+        setEmail(customer.email);
+        setShippingAddress(customer.shippingAddress);
+      }
+    }
+
+    loadCheckoutData();
   }, []);
 
   const checkoutProducts = cartItems.flatMap((cartItem) => {
-   const product = productCatalog.find(
-  (item) => item.id === cartItem.productId
-);
+    const product = productCatalog.find((item) => item.id === cartItem.productId);
+
     if (!product) {
       return [];
     }
@@ -98,22 +73,24 @@ if (customer) {
       setFormError("Your cart is empty.");
       return;
     }
-const unavailableProduct = checkoutProducts.find(
-  (product) => product.quantity > product.stock
-);
 
-if (unavailableProduct) {
-  setFormError(
-    `${unavailableProduct.name} only has ${unavailableProduct.stock} item(s) left in stock.`
-  );
-  return;
-}
+    const unavailableProduct = checkoutProducts.find(
+      (product) => product.quantity > product.stock
+    );
+
+    if (unavailableProduct) {
+      setFormError(
+        `${unavailableProduct.name} only has ${unavailableProduct.stock} item(s) left in stock.`
+      );
+      return;
+    }
+
     const order: Order = {
-  id: `MS-${Date.now()}`,
-  createdAt: new Date().toLocaleString(),
-  status: "Pending",
-  paymentMethod,
-  customer: {
+      id: `MS-${Date.now()}`,
+      createdAt: new Date().toLocaleString(),
+      status: "Pending",
+      paymentMethod,
+      customer: {
         fullName,
         email,
         shippingAddress,
@@ -129,32 +106,31 @@ if (unavailableProduct) {
       total,
     };
 
-   const stockItems = checkoutProducts.map((product) => ({
-  productId: product.id,
-  quantity: product.quantity,
-}));
+    const stockItems: CartItem[] = checkoutProducts.map((product) => ({
+      productId: product.id,
+      quantity: product.quantity,
+    }));
 
-let savedOrder = order;
+    try {
+      setIsPlacingOrder(true);
+      setFormError("");
 
-try {
-  savedOrder = await createDatabaseOrder(order);
-} catch (error) {
-  setFormError(
-    error instanceof Error
-      ? error.message
-      : "Failed to save order to database."
-  );
-  return;
-}
+      const savedOrder = await createDatabaseOrder(order);
 
-addOrder(savedOrder);
+      addOrder(savedOrder);
+      reduceStockAfterOrder(stockItems);
+      clearCart();
 
-reduceStockAfterOrder(stockItems);
-
-clearCart();
-    window.dispatchEvent(new Event("cartUpdated"));
-
-    router.push("/order-success");
+      router.push("/order-success");
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Failed to save order to database."
+      );
+    } finally {
+      setIsPlacingOrder(false);
+    }
   }
 
   if (checkoutProducts.length === 0) {
@@ -183,17 +159,20 @@ clearCart();
           {checkoutProducts.map((product) => (
             <div
               key={product.id}
-              className="flex items-center justify-between"
+              className="flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-4">
-                <ProductVisual image={product.image} alt={product.name} size="small" />
+                <ProductVisual
+                  image={product.image}
+                  alt={product.name}
+                  size="small"
+                />
 
                 <div>
-                  <p className="font-semibold text-gray-900">
-                    {product.name}
-                  </p>
-                  <p className="text-gray-600">
-                    Quantity: {product.quantity}
+                  <p className="font-semibold text-gray-900">{product.name}</p>
+                  <p className="text-gray-600">Quantity: {product.quantity}</p>
+                  <p className="text-sm text-gray-500">
+                    Available stock: {product.stock}
                   </p>
                 </div>
               </div>
@@ -264,31 +243,34 @@ clearCart();
             rows={4}
           />
         </div>
-<div>
-  <label className="block text-sm font-medium text-gray-700">
-    Payment Method
-  </label>
 
-  <select
-    value={paymentMethod}
-    onChange={(event) => setPaymentMethod(event.target.value)}
-    className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
-  >
-    <option value="Cash on Delivery">Cash on Delivery</option>
-    <option value="Card Payment">Card Payment</option>
-    <option value="Mobile Money">Mobile Money</option>
-    <option value="Bank Transfer">Bank Transfer</option>
-  </select>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Payment Method
+          </label>
 
-  <p className="mt-2 text-sm text-gray-500">
-    This is a mock payment method. No real payment will be processed.
-  </p>
-</div>
+          <select
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+          >
+            <option value="Cash on Delivery">Cash on Delivery</option>
+            <option value="Card Payment">Card Payment</option>
+            <option value="Mobile Money">Mobile Money</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+
+          <p className="mt-2 text-sm text-gray-500">
+            This is a mock payment method. No real payment will be processed.
+          </p>
+        </div>
+
         <button
           type="submit"
-          className="rounded-lg bg-black px-6 py-3 text-white"
+          disabled={isPlacingOrder}
+          className="rounded-lg bg-black px-6 py-3 text-white disabled:bg-gray-400"
         >
-          Place Mock Order
+          {isPlacingOrder ? "Placing Order..." : "Place Mock Order"}
         </button>
       </form>
     </>
