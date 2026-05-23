@@ -1,37 +1,14 @@
 "use client";
-import { updateOrdersForCustomerEmail } from "@/utils/orderStorage";
+
 import { FormEvent, useEffect, useState } from "react";
+import { CustomerUser } from "@/types/models";
+import { getCurrentCustomer } from "@/utils/authStorage";
 import {
-  CustomerUser,
-  getCurrentCustomer,
-  getCustomers,
-  logoutCustomer,
-  saveCustomers,
-  setCurrentCustomer,
-} from "@/utils/authStorage";
-
-type OrderItem = {
-  productId: number;
-  name: string;
-  category: string;
-  image: string;
-  price: number;
-  quantity: number;
-};
-
-type Order = {
-  id: string;
-  createdAt: string;
-  status: string;
-  paymentMethod?: string;
-  customer: {
-    fullName: string;
-    email: string;
-    shippingAddress: string;
-  };
-  items: OrderItem[];
-  total: number;
-};
+  loginCustomerWithSupabase,
+  logoutCustomerFromSupabase,
+  registerCustomerWithSupabase,
+  updateCustomerProfileInSupabase,
+} from "@/utils/supabaseAuthService";
 
 export default function AccountContent() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -45,10 +22,10 @@ export default function AccountContent() {
   const [message, setMessage] = useState("");
 
   const [editFullName, setEditFullName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
   const [editShippingAddress, setEditShippingAddress] = useState("");
-  const [editPassword, setEditPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [editMessage, setEditMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setCurrentUser(getCurrentCustomer());
@@ -62,7 +39,7 @@ export default function AccountContent() {
     setMessage("");
   }
 
-  function handleRegister(event: FormEvent<HTMLFormElement>) {
+  async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (
@@ -75,31 +52,30 @@ export default function AccountContent() {
       return;
     }
 
-    const users = getCustomers();
-    const existingUser = users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
-    );
+    try {
+      setIsSubmitting(true);
+      setMessage("");
 
-    if (existingUser) {
-      setMessage("An account with this email already exists.");
-      return;
+      const customer = await registerCustomerWithSupabase({
+        fullName,
+        email,
+        password,
+        shippingAddress,
+      });
+
+      setCurrentUser(customer);
+      resetForm();
+      window.dispatchEvent(new Event("customerUpdated"));
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Registration failed."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const newUser: CustomerUser = {
-      id: `CU-${Date.now()}`,
-      fullName,
-      email,
-      shippingAddress,
-      password,
-    };
-
-    saveCustomers([newUser, ...users]);
-    setCurrentCustomer(newUser);
-    setCurrentUser(newUser);
-    resetForm();
   }
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!email.trim() || !password.trim()) {
@@ -107,28 +83,31 @@ export default function AccountContent() {
       return;
     }
 
-    const users = getCustomers();
-    const foundUser = users.find(
-      (user) =>
-        user.email.toLowerCase() === email.toLowerCase() &&
-        user.password === password
-    );
+    try {
+      setIsSubmitting(true);
+      setMessage("");
 
-    if (!foundUser) {
-      setMessage("Invalid email or password.");
-      return;
+      const customer = await loginCustomerWithSupabase({
+        email,
+        password,
+      });
+
+      setCurrentUser(customer);
+      resetForm();
+      window.dispatchEvent(new Event("customerUpdated"));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Login failed.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setCurrentCustomer(foundUser);
-    setCurrentUser(foundUser);
-    resetForm();
   }
 
-  function handleLogout() {
-    logoutCustomer();
+  async function handleLogout() {
+    await logoutCustomerFromSupabase();
     setCurrentUser(null);
     setIsEditing(false);
     resetForm();
+    window.dispatchEvent(new Event("customerUpdated"));
   }
 
   function startEditing() {
@@ -137,9 +116,8 @@ export default function AccountContent() {
     }
 
     setEditFullName(currentUser.fullName);
-    setEditEmail(currentUser.email);
     setEditShippingAddress(currentUser.shippingAddress);
-    setEditPassword(currentUser.password);
+    setNewPassword("");
     setEditMessage("");
     setIsEditing(true);
   }
@@ -147,60 +125,38 @@ export default function AccountContent() {
   function handleCancelEdit() {
     setIsEditing(false);
     setEditMessage("");
+    setNewPassword("");
   }
 
-
-  function handleUpdateProfile(event: FormEvent<HTMLFormElement>) {
+  async function handleUpdateProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!currentUser) {
+    if (!editFullName.trim() || !editShippingAddress.trim()) {
+      setEditMessage("Please fill in your name and shipping address.");
       return;
     }
 
-    if (
-      !editFullName.trim() ||
-      !editEmail.trim() ||
-      !editShippingAddress.trim() ||
-      !editPassword.trim()
-    ) {
-      setEditMessage("Please fill in all profile fields.");
-      return;
+    try {
+      setIsSubmitting(true);
+      setEditMessage("");
+
+      const updatedCustomer = await updateCustomerProfileInSupabase({
+        fullName: editFullName,
+        shippingAddress: editShippingAddress,
+        newPassword,
+      });
+
+      setCurrentUser(updatedCustomer);
+      setIsEditing(false);
+      setNewPassword("");
+      window.dispatchEvent(new Event("customerUpdated"));
+    } catch (error) {
+      setEditMessage(
+        error instanceof Error ? error.message : "Profile update failed."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const users = getCustomers();
-
-    const emailBelongsToAnotherUser = users.some(
-      (user) =>
-        user.id !== currentUser.id &&
-        user.email.toLowerCase() === editEmail.toLowerCase()
-    );
-
-    if (emailBelongsToAnotherUser) {
-      setEditMessage("Another customer already uses this email.");
-      return;
-    }
-
-    const oldEmail = currentUser.email;
-
-    const updatedUser: CustomerUser = {
-      ...currentUser,
-      fullName: editFullName,
-      email: editEmail,
-      shippingAddress: editShippingAddress,
-      password: editPassword,
-    };
-
-    const updatedUsers = users.map((user) =>
-      user.id === currentUser.id ? updatedUser : user
-    );
-
-    saveCustomers(updatedUsers);
-    setCurrentCustomer(updatedUser);
-    updateOrdersForCustomerEmail(oldEmail, updatedUser);
-
-    setCurrentUser(updatedUser);
-    setIsEditing(false);
-    setEditMessage("");
   }
 
   if (currentUser) {
@@ -275,10 +231,15 @@ export default function AccountContent() {
 
               <input
                 type="email"
-                value={editEmail}
-                onChange={(event) => setEditEmail(event.target.value)}
-                className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                value={currentUser.email}
+                disabled
+                className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-100 px-4 py-3 text-gray-500"
               />
+
+              <p className="mt-2 text-sm text-gray-500">
+                Email change is disabled in this phase. We will add verified
+                email changes later.
+              </p>
             </div>
 
             <div>
@@ -298,13 +259,14 @@ export default function AccountContent() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Password
+                New Password
               </label>
 
               <input
                 type="password"
-                value={editPassword}
-                onChange={(event) => setEditPassword(event.target.value)}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="Leave blank to keep current password"
                 className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
               />
             </div>
@@ -312,9 +274,10 @@ export default function AccountContent() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="submit"
-                className="rounded-lg bg-black px-6 py-3 text-white"
+                disabled={isSubmitting}
+                className="rounded-lg bg-black px-6 py-3 text-white disabled:bg-gray-400"
               >
-                Save Profile
+                {isSubmitting ? "Saving..." : "Save Profile"}
               </button>
 
               <button
@@ -366,7 +329,9 @@ export default function AccountContent() {
       </div>
 
       <h2 className="mt-6 text-2xl font-bold text-gray-900">
-        {mode === "login" ? "Customer Login" : "Create Customer Account"}
+        {mode === "login"
+          ? "Customer Login"
+          : "Create Customer Account"}
       </h2>
 
       {message && (
@@ -441,9 +406,14 @@ export default function AccountContent() {
 
         <button
           type="submit"
-          className="rounded-lg bg-black px-6 py-3 text-white"
+          disabled={isSubmitting}
+          className="rounded-lg bg-black px-6 py-3 text-white disabled:bg-gray-400"
         >
-          {mode === "login" ? "Login" : "Create Account"}
+          {isSubmitting
+            ? "Please wait..."
+            : mode === "login"
+              ? "Login"
+              : "Create Account"}
         </button>
       </form>
     </div>
