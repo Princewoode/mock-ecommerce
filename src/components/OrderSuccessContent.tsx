@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ProductVisual from "@/components/ProductVisual";
 import { getLastOrder } from "@/utils/orderStorage";
+import { formatCurrency } from "@/utils/currency";
 type OrderItem = {
   productId: number;
   name: string;
@@ -88,7 +89,7 @@ export default function OrderSuccessContent() {
               </div>
 
               <p className="font-bold text-gray-900">
-                ${(item.price * item.quantity).toFixed(2)}
+                {formatCurrency(item.price * item.quantity)}
               </p>
             </div>
           ))}
@@ -97,7 +98,7 @@ export default function OrderSuccessContent() {
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <p className="text-lg font-bold text-gray-900">Total</p>
           <p className="text-lg font-bold text-gray-900">
-            ${order.total.toFixed(2)}
+            {formatCurrency(order.total)}
           </p>
         </div>
       </div>

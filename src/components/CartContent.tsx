@@ -11,7 +11,7 @@ import {
   removeCartItem,
 } from "@/utils/cartStorage";
 import { getProductCatalog } from "@/utils/productCatalogService";
-
+import { formatCurrency } from "@/utils/currency";
 export default function CartContent() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [productCatalog, setProductCatalog] = useState<StoreProduct[]>([]);
@@ -126,7 +126,7 @@ export default function CartContent() {
                   </p>
 
                   <p className="mt-1 font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
+                    {formatCurrency(product.price)}
                   </p>
 
                   <div className="mt-3 flex items-center gap-3">
@@ -160,7 +160,7 @@ export default function CartContent() {
               </div>
 
               <p className="text-lg font-bold text-gray-900">
-                ${(product.price * product.quantity).toFixed(2)}
+               {formatCurrency(product.price * product.quantity)}
               </p>
             </div>
           );
@@ -170,7 +170,7 @@ export default function CartContent() {
       <div className="mt-6 flex items-center justify-between">
         <p className="text-xl font-bold text-gray-900">Total</p>
 
-        <p className="text-xl font-bold text-gray-900">${total.toFixed(2)}</p>
+        <p className="text-xl font-bold text-gray-900">{formatCurrency(total)}</p>
       </div>
 
       <Link

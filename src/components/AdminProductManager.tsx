@@ -8,7 +8,7 @@ import {
   getAdminProducts,
   updateAdminProduct,
 } from "@/utils/adminProductApi";
-
+import { formatCurrency } from "@/utils/currency";
 export default function AdminProductManager() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -245,7 +245,7 @@ export default function AdminProductManager() {
               type="number"
               value={price}
               onChange={(event) => setPrice(event.target.value)}
-              placeholder="Example: 49.99"
+              placeholder="Example: 120.00"
               className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
             />
           </div>
@@ -337,7 +337,7 @@ export default function AdminProductManager() {
                   </div>
 
                   <p className="font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
+                   {formatCurrency(product.price)}
                   </p>
                 </div>
 

@@ -8,7 +8,7 @@ import {
   getAdminDatabaseOrders,
   updateDatabaseOrderStatus,
 } from "@/utils/databaseOrderService";
-
+import { formatCurrency } from "@/utils/currency";
 const orderStatuses = [
   "Pending",
   "Processing",
@@ -201,7 +201,7 @@ export default function AdminOrderManager() {
                   </div>
 
                   <p className="font-bold text-gray-900">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {formatCurrency(item.price * item.quantity)}
                   </p>
                 </div>
               ))}
@@ -211,7 +211,7 @@ export default function AdminOrderManager() {
               <p className="text-lg font-bold text-gray-900">Total</p>
 
               <p className="text-lg font-bold text-gray-900">
-                ${order.total.toFixed(2)}
+                {formatCurrency(order.total)}
               </p>
             </div>
           </div>

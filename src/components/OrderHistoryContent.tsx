@@ -7,7 +7,7 @@ import { Order } from "@/types/models";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { getOrdersByCustomerEmail } from "@/utils/orderStorage";
 import { getCustomerDatabaseOrders } from "@/utils/databaseOrderService";
-
+import { formatCurrency } from "@/utils/currency";
 export default function OrderHistoryContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -116,7 +116,7 @@ export default function OrderHistoryContent() {
             </div>
 
             <p className="text-xl font-bold text-gray-900">
-              ${order.total.toFixed(2)}
+             {formatCurrency(order.total)}
             </p>
           </div>
 
@@ -136,7 +136,7 @@ export default function OrderHistoryContent() {
                 </div>
 
                 <p className="font-bold text-gray-900">
-                  ${(item.price * item.quantity).toFixed(2)}
+                  {formatCurrency(item.price * item.quantity)}
                 </p>
               </div>
             ))}

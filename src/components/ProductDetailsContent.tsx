@@ -8,6 +8,7 @@ import { getProductCatalog } from "@/utils/productCatalogService";
 import ProductVisual from "@/components/ProductVisual";
 import ProductReviews from "@/components/ProductReviews";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
+import { formatCurrency } from "@/utils/currency";
 type ProductDetailsContentProps = {
   productId: number;
 };
@@ -82,7 +83,7 @@ export default function ProductDetailsContent({
         <p className="mt-4 text-lg text-gray-600">{product.description}</p>
 
         <p className="mt-6 text-2xl font-bold text-gray-900">
-  ${product.price.toFixed(2)}
+  {formatCurrency(product.price)}
 </p>
 
 <p

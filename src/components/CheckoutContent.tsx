@@ -11,7 +11,7 @@ import { addOrder } from "@/utils/orderStorage";
 import { getProductCatalog } from "@/utils/productCatalogService";
 import { reduceStockAfterOrder } from "@/utils/productStorage";
 import { createDatabaseOrder } from "@/utils/supabaseOrderService";
-
+import { formatCurrency } from "@/utils/currency";
 export default function CheckoutContent() {
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function CheckoutContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Cash on Delivery");
+ const [paymentMethod, setPaymentMethod] = useState("MTN Mobile Money");
   const [formError, setFormError] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -181,7 +181,7 @@ const order: Order = {
               </div>
 
               <p className="font-bold text-gray-900">
-                ${(product.price * product.quantity).toFixed(2)}
+                {formatCurrency(product.price * product.quantity)}
               </p>
             </div>
           ))}
@@ -190,7 +190,7 @@ const order: Order = {
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <p className="text-lg font-bold text-gray-900">Total</p>
           <p className="text-lg font-bold text-gray-900">
-            ${total.toFixed(2)}
+            {formatCurrency(total)}
           </p>
         </div>
       </div>
@@ -257,10 +257,12 @@ const order: Order = {
             onChange={(event) => setPaymentMethod(event.target.value)}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
           >
-            <option value="Cash on Delivery">Cash on Delivery</option>
-            <option value="Card Payment">Card Payment</option>
-            <option value="Mobile Money">Mobile Money</option>
-            <option value="Bank Transfer">Bank Transfer</option>
+           <option value="MTN Mobile Money">MTN Mobile Money</option>
+<option value="Telecel Cash">Telecel Cash</option>
+<option value="ATMoney">ATMoney</option>
+<option value="Cash on Delivery">Cash on Delivery</option>
+<option value="Bank Transfer">Bank Transfer</option>
+<option value="Card Payment">Card Payment</option>
           </select>
 
           <p className="mt-2 text-sm text-gray-500">

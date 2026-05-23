@@ -2,6 +2,7 @@ import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
+import { formatCurrency } from "@/utils/currency";
 type ProductCardProps = {
   id?: number;
   name: string;
@@ -57,7 +58,7 @@ export default function ProductCard({
       <p className="mt-2 line-clamp-2 text-gray-600">{description}</p>
 
       <p className="mt-5 text-2xl font-bold text-gray-900">
-        ${price.toFixed(2)}
+       {formatCurrency(price)}
       </p>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
