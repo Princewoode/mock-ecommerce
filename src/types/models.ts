@@ -32,6 +32,7 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
+  customerId?: string;
   createdAt: string;
   status: string;
   paymentMethod?: string;

@@ -13,6 +13,7 @@ type DatabaseOrderItem = {
 
 type DatabaseOrder = {
   id: string;
+  customer_id: string | null;
   created_at: string;
   customer_name: string;
   customer_email: string;
@@ -25,8 +26,9 @@ type DatabaseOrder = {
 
 function mapDatabaseOrder(order: DatabaseOrder): Order {
   return {
-    id: order.id,
-    createdAt: new Date(order.created_at).toLocaleString(),
+  id: order.id,
+  customerId: order.customer_id || undefined,
+  createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
     customer: {
@@ -49,19 +51,27 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get("email");
+const customerId = searchParams.get("customerId");
 
-  if (!email) {
-    return NextResponse.json(
-      { message: "Customer email is required." },
-      { status: 400 }
-    );
-  }
+if (!email && !customerId) {
+  return NextResponse.json(
+    { message: "Customer email or customer ID is required." },
+    { status: 400 }
+  );
+}
 
-  const { data, error } = await supabaseAdmin
-    .from("orders")
-    .select("*, order_items(*)")
-    .eq("customer_email", email)
-    .order("created_at", { ascending: false });
+let query = supabaseAdmin
+  .from("orders")
+  .select("*, order_items(*)")
+  .order("created_at", { ascending: false });
+
+if (customerId) {
+  query = query.eq("customer_id", customerId);
+} else if (email) {
+  query = query.eq("customer_email", email);
+}
+
+const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });

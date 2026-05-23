@@ -20,12 +20,22 @@ async function handleResponse(response: Response) {
   return result;
 }
 
-export async function getCustomerDatabaseOrders(
-  email: string
-): Promise<Order[]> {
-  const response = await fetch(
-    `/api/customer/orders?email=${encodeURIComponent(email)}`
-  );
+export async function getCustomerDatabaseOrders({
+  email,
+  customerId,
+}: {
+  email: string;
+  customerId?: string;
+}): Promise<Order[]> {
+  const params = new URLSearchParams();
+
+  if (customerId) {
+    params.set("customerId", customerId);
+  } else {
+    params.set("email", email);
+  }
+
+  const response = await fetch(`/api/customer/orders?${params.toString()}`);
 
   const result = await handleResponse(response);
 

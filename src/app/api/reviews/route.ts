@@ -98,11 +98,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await supabaseAdmin
-    .from("reviews")
-    .insert({
-      product_id: review.productId,
-      customer_id: null,
-      customer_name: review.customerName,
+  .from("reviews")
+  .insert({
+    product_id: review.productId,
+    customer_id: review.customerId || null,
+    customer_name: review.customerName,
       customer_email: review.customerEmail,
       rating: review.rating,
       comment: review.comment,

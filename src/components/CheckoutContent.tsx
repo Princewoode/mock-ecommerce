@@ -85,16 +85,19 @@ export default function CheckoutContent() {
       return;
     }
 
-    const order: Order = {
-      id: `MS-${Date.now()}`,
-      createdAt: new Date().toLocaleString(),
-      status: "Pending",
-      paymentMethod,
-      customer: {
-        fullName,
-        email,
-        shippingAddress,
-      },
+    const currentCustomer = getCurrentCustomer();
+
+const order: Order = {
+  id: `MS-${Date.now()}`,
+  customerId: currentCustomer?.id,
+  createdAt: new Date().toLocaleString(),
+  status: "Pending",
+  paymentMethod,
+  customer: {
+    fullName,
+    email,
+    shippingAddress,
+  },
       items: checkoutProducts.map((product) => ({
         productId: product.id,
         name: product.name,

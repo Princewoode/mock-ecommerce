@@ -61,15 +61,16 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: createdOrder, error: orderError } = await supabaseAdmin
-    .from("orders")
-    .insert({
-      customer_name: order.customer.fullName,
-      customer_email: order.customer.email,
-      shipping_address: order.customer.shippingAddress,
-      status: order.status || "Pending",
-      payment_method: order.paymentMethod || "Not specified",
-      total: order.total,
-    })
+  .from("orders")
+  .insert({
+    customer_id: order.customerId || null,
+    customer_name: order.customer.fullName,
+    customer_email: order.customer.email,
+    shipping_address: order.customer.shippingAddress,
+    status: order.status || "Pending",
+    payment_method: order.paymentMethod || "Not specified",
+    total: order.total,
+  })
     .select("*")
     .single();
 
@@ -123,8 +124,9 @@ export async function POST(request: NextRequest) {
   }
 
   const savedOrder: Order = {
-    id: createdOrder.id,
-    createdAt: new Date(createdOrder.created_at).toLocaleString(),
+  id: createdOrder.id,
+  customerId: createdOrder.customer_id || undefined,
+  createdAt: new Date(createdOrder.created_at).toLocaleString(),
     status: createdOrder.status,
     paymentMethod: createdOrder.payment_method,
     customer: {

@@ -28,7 +28,10 @@ export default function OrderHistoryContent() {
       setCustomerEmail(customer.email);
 
       try {
-        const databaseOrders = await getCustomerDatabaseOrders(customer.email);
+        const databaseOrders = await getCustomerDatabaseOrders({
+  email: customer.email,
+  customerId: customer.id,
+});
         setOrders(databaseOrders);
         setMessage("");
       } catch (error) {

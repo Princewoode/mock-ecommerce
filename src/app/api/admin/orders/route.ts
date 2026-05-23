@@ -13,6 +13,7 @@ type DatabaseOrderItem = {
 
 type DatabaseOrder = {
   id: string;
+  customer_id: string | null;
   created_at: string;
   customer_name: string;
   customer_email: string;
@@ -32,8 +33,9 @@ function verifyAdminRequest(request: NextRequest) {
 
 function mapDatabaseOrder(order: DatabaseOrder): Order {
   return {
-    id: order.id,
-    createdAt: new Date(order.created_at).toLocaleString(),
+  id: order.id,
+  customerId: order.customer_id || undefined,
+  createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
     customer: {
