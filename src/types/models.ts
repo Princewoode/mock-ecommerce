@@ -6,6 +6,8 @@ export type StoreProduct = {
   price: number;
   image: string;
   stock: number;
+  sellerId?: string;
+  sellerBusinessName?: string;
 };
 
 export type CartItem = {

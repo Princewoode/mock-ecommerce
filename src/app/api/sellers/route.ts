@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getAuthenticatedUser } from "@/lib/serverAuth";
 
 type SellerPayload = {
-  userId?: string;
   businessName?: string;
   ownerName?: string;
   phone?: string;
@@ -20,6 +20,23 @@ function isValidGhanaPhoneNumber(phone: string) {
 }
 
 export async function POST(request: NextRequest) {
+  let userId = "";
+
+  try {
+    const user = await getAuthenticatedUser(request);
+    userId = user.id;
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Please log in before applying as a seller.",
+      },
+      { status: 401 }
+    );
+  }
+
   const payload = (await request.json()) as SellerPayload;
 
   const businessName = String(payload.businessName || "").trim();
@@ -61,13 +78,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data: existingSeller } = await supabaseAdmin
+  const { data: existingSellerByUser } = await supabaseAdmin
+    .from("sellers")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingSellerByUser) {
+    return NextResponse.json(
+      { message: "You have already submitted a seller application." },
+      { status: 400 }
+    );
+  }
+
+  const { data: existingSellerByPhone } = await supabaseAdmin
     .from("sellers")
     .select("id")
     .eq("phone", phone)
     .maybeSingle();
 
-  if (existingSeller) {
+  if (existingSellerByPhone) {
     return NextResponse.json(
       { message: "A seller application with this phone number already exists." },
       { status: 400 }
@@ -77,7 +107,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("sellers")
     .insert({
-      user_id: payload.userId || null,
+      user_id: userId,
       business_name: businessName,
       owner_name: ownerName,
       phone,

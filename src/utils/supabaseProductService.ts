@@ -10,6 +10,8 @@ type SupabaseProductRow = {
   image_url: string;
   stock: number;
   is_default: boolean;
+  seller_id: string | null;
+  seller_business_name: string | null;
 };
 
 export async function getSupabaseProducts(): Promise<StoreProduct[]> {
@@ -32,5 +34,7 @@ export async function getSupabaseProducts(): Promise<StoreProduct[]> {
     price: Number(product.price),
     image: product.image_url,
     stock: product.stock,
+    sellerId: product.seller_id || undefined,
+    sellerBusinessName: product.seller_business_name || undefined,
   }));
 }

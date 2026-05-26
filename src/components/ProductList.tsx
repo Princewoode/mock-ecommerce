@@ -40,7 +40,10 @@ export default function ProductList() {
     let result = allProducts.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase());
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.sellerBusinessName || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
       const matchesCategory =
         selectedCategory === "All" || product.category === selectedCategory;
@@ -64,12 +67,12 @@ export default function ProductList() {
       <div className="mt-8 grid gap-4 rounded-2xl bg-white p-6 shadow-sm md:grid-cols-3">
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Search Products
+            Search Products or Sellers
           </label>
 
           <input
             type="text"
-            placeholder="Search by name or description"
+            placeholder="Search by product, description, or seller"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
@@ -140,6 +143,7 @@ export default function ProductList() {
                   price={product.price}
                   image={product.image}
                   stock={product.stock}
+                  sellerBusinessName={product.sellerBusinessName}
                 />
               ))}
             </div>

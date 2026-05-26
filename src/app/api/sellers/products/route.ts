@@ -1,0 +1,285 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getAuthenticatedUser } from "@/lib/serverAuth";
+
+type ProductPayload = {
+  id?: number;
+  name?: string;
+  category?: string;
+  description?: string;
+  price?: number | string;
+  image?: string;
+  stock?: number | string;
+};
+
+type DatabaseSeller = {
+  id: string;
+  business_name: string;
+  status: string;
+};
+
+type SupabaseProductRow = {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  price: number | string;
+  image_url: string;
+  stock: number;
+  is_default: boolean;
+  seller_id: string | null;
+  seller_business_name: string | null;
+};
+
+async function getVerifiedSeller(request: NextRequest) {
+  const user = await getAuthenticatedUser(request);
+
+  const { data, error } = await supabaseAdmin
+    .from("sellers")
+    .select("id, business_name, status")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !data) {
+    throw new Error("No seller profile found. Please apply as a seller first.");
+  }
+
+  const seller = data as DatabaseSeller;
+
+  if (seller.status !== "Verified") {
+    throw new Error(
+      `Your seller account is currently ${seller.status}. Admin verification is required before product management.`
+    );
+  }
+
+  return seller;
+}
+
+function mapProduct(product: SupabaseProductRow) {
+  return {
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    description: product.description,
+    price: Number(product.price),
+    image: product.image_url,
+    stock: product.stock,
+    sellerId: product.seller_id || undefined,
+    sellerBusinessName: product.seller_business_name || undefined,
+    isDefault: product.is_default,
+  };
+}
+
+function validateProductPayload(payload: ProductPayload) {
+  const name = String(payload.name || "").trim();
+  const category = String(payload.category || "").trim();
+  const description = String(payload.description || "").trim();
+  const image = String(payload.image || "").trim();
+  const price = Number(payload.price);
+  const stock = Number(payload.stock);
+
+  if (!name || !category || !description || !image) {
+    return {
+      valid: false,
+      message: "Please fill in all product fields.",
+      product: null,
+    };
+  }
+
+  if (Number.isNaN(price) || price <= 0) {
+    return {
+      valid: false,
+      message: "Please enter a valid product price.",
+      product: null,
+    };
+  }
+
+  if (Number.isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+    return {
+      valid: false,
+      message: "Please enter a valid whole-number stock quantity.",
+      product: null,
+    };
+  }
+
+  return {
+    valid: true,
+    message: "",
+    product: {
+      name,
+      category,
+      description,
+      price,
+      image_url: image,
+      stock,
+    },
+  };
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const seller = await getVerifiedSeller(request);
+
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("seller_id", seller.id)
+      .order("id", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      products: ((data || []) as SupabaseProductRow[]).map(mapProduct),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to load seller products.",
+      },
+      { status: 401 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const seller = await getVerifiedSeller(request);
+    const payload = (await request.json()) as ProductPayload;
+    const validation = validateProductPayload(payload);
+
+    if (!validation.valid || !validation.product) {
+      return NextResponse.json(
+        { message: validation.message },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .insert({
+        ...validation.product,
+        seller_id: seller.id,
+        seller_business_name: seller.business_name,
+        is_default: false,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      message: "Seller product created successfully.",
+      product: mapProduct(data as SupabaseProductRow),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to create seller product.",
+      },
+      { status: 401 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const seller = await getVerifiedSeller(request);
+    const payload = (await request.json()) as ProductPayload;
+    const productId = Number(payload.id);
+
+    if (Number.isNaN(productId)) {
+      return NextResponse.json(
+        { message: "Invalid product ID." },
+        { status: 400 }
+      );
+    }
+
+    const validation = validateProductPayload(payload);
+
+    if (!validation.valid || !validation.product) {
+      return NextResponse.json(
+        { message: validation.message },
+        { status: 400 }
+      );
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .update({
+        ...validation.product,
+        seller_business_name: seller.business_name,
+      })
+      .eq("id", productId)
+      .eq("seller_id", seller.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      message: "Seller product updated successfully.",
+      product: mapProduct(data as SupabaseProductRow),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to update seller product.",
+      },
+      { status: 401 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const seller = await getVerifiedSeller(request);
+    const { searchParams } = new URL(request.url);
+    const productId = Number(searchParams.get("id"));
+
+    if (Number.isNaN(productId)) {
+      return NextResponse.json(
+        { message: "Invalid product ID." },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", productId)
+      .eq("seller_id", seller.id);
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      message: "Seller product deleted successfully.",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete seller product.",
+      },
+      { status: 401 }
+    );
+  }
+}

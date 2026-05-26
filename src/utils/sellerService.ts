@@ -1,4 +1,5 @@
 import { SellerProfile } from "@/types/models";
+import { supabase } from "@/lib/supabaseClient";
 
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
 
@@ -8,6 +9,19 @@ function getAdminApiPassword() {
   }
 
   return sessionStorage.getItem(ADMIN_API_PASSWORD_KEY) || "";
+}
+
+async function getCustomerAuthHeaders() {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  if (!token) {
+    throw new Error("Please log in before continuing.");
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
 }
 
 async function handleResponse(response: Response) {
@@ -21,7 +35,6 @@ async function handleResponse(response: Response) {
 }
 
 export async function submitSellerApplication(payload: {
-  userId?: string;
   businessName: string;
   ownerName: string;
   phone: string;
@@ -31,10 +44,13 @@ export async function submitSellerApplication(payload: {
   businessAddress: string;
   productCategories: string;
 }) {
+  const authHeaders = await getCustomerAuthHeaders();
+
   const response = await fetch("/api/sellers", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
     },
     body: JSON.stringify(payload),
   });
