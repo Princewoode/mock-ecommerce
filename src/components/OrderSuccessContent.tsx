@@ -73,6 +73,16 @@ export default function OrderSuccessContent() {
 <p className="text-sm text-gray-600">
   Payment Method: {order.paymentMethod || "Not specified"}
 </p>
+
+{order.delivery && (
+  <div className="mt-2 text-gray-600">
+    <p>
+      Delivery: {order.delivery.city}, {order.delivery.region}
+    </p>
+    <p>Phone: {order.delivery.phone}</p>
+    <p>Delivery Fee: {formatCurrency(order.delivery.fee)}</p>
+  </div>
+)}
         <div className="mt-4 space-y-4 border-t pt-4">
           {order.items.map((item) => (
             <div

@@ -18,6 +18,10 @@ type DatabaseOrder = {
   customer_name: string;
   customer_email: string;
   shipping_address: string;
+  delivery_region: string | null;
+  delivery_city: string | null;
+  delivery_phone: string | null;
+  delivery_fee: number | string | null;
   status: string;
   payment_method: string | null;
   total: number | string;
@@ -38,12 +42,18 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
   createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
-    customer: {
-      fullName: order.customer_name,
-      email: order.customer_email,
-      shippingAddress: order.shipping_address,
-    },
-    items: order.order_items.map((item) => ({
+   customer: {
+  fullName: order.customer_name,
+  email: order.customer_email,
+  shippingAddress: order.shipping_address,
+},
+delivery: {
+  region: order.delivery_region || "",
+  city: order.delivery_city || "",
+  phone: order.delivery_phone || "",
+  fee: Number(order.delivery_fee || 0),
+},
+items: order.order_items.map((item) => ({
       productId: item.product_id,
       name: item.product_name,
       category: item.product_category,

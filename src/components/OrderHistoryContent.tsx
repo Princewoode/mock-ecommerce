@@ -118,6 +118,15 @@ export default function OrderHistoryContent() {
             <p className="text-xl font-bold text-gray-900">
              {formatCurrency(order.total)}
             </p>
+            {order.delivery && (
+  <div className="mt-2 text-gray-600">
+    <p>
+      Delivery: {order.delivery.city}, {order.delivery.region}
+    </p>
+    <p>Phone: {order.delivery.phone}</p>
+    <p>Delivery Fee: {formatCurrency(order.delivery.fee)}</p>
+  </div>
+)}
           </div>
 
           <div className="mt-4 space-y-4">

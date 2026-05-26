@@ -5,13 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductVisual from "@/components/ProductVisual";
 import { CartItem, Order, StoreProduct } from "@/types/models";
+import { formatCurrency } from "@/utils/currency";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { clearCart, getCartItems } from "@/utils/cartStorage";
 import { addOrder } from "@/utils/orderStorage";
 import { getProductCatalog } from "@/utils/productCatalogService";
 import { reduceStockAfterOrder } from "@/utils/productStorage";
 import { createDatabaseOrder } from "@/utils/supabaseOrderService";
-import { formatCurrency } from "@/utils/currency";
+import {
+  getDeliveryFee,
+  ghanaRegions,
+  isValidGhanaPhoneNumber,
+} from "@/utils/ghanaDelivery";
+
 export default function CheckoutContent() {
   const router = useRouter();
 
@@ -21,7 +27,10 @@ export default function CheckoutContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
- const [paymentMethod, setPaymentMethod] = useState("MTN Mobile Money");
+  const [deliveryRegion, setDeliveryRegion] = useState("Greater Accra");
+  const [deliveryCity, setDeliveryCity] = useState("");
+  const [deliveryPhone, setDeliveryPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("MTN Mobile Money");
   const [formError, setFormError] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -57,15 +66,31 @@ export default function CheckoutContent() {
     ];
   });
 
-  const total = checkoutProducts.reduce((sum, product) => {
+  const subtotal = checkoutProducts.reduce((sum, product) => {
     return sum + product.price * product.quantity;
   }, 0);
+
+  const deliveryFee = getDeliveryFee(deliveryRegion);
+  const total = subtotal + deliveryFee;
 
   async function handlePlaceOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!fullName.trim() || !email.trim() || !shippingAddress.trim()) {
-      setFormError("Please fill in all checkout fields.");
+    if (
+      !fullName.trim() ||
+      !email.trim() ||
+      !shippingAddress.trim() ||
+      !deliveryCity.trim() ||
+      !deliveryPhone.trim()
+    ) {
+      setFormError("Please fill in all checkout and delivery fields.");
+      return;
+    }
+
+    if (!isValidGhanaPhoneNumber(deliveryPhone)) {
+      setFormError(
+        "Please enter a valid Ghana phone number, for example 0241234567 or +233241234567."
+      );
       return;
     }
 
@@ -87,17 +112,23 @@ export default function CheckoutContent() {
 
     const currentCustomer = getCurrentCustomer();
 
-const order: Order = {
-  id: `MS-${Date.now()}`,
-  customerId: currentCustomer?.id,
-  createdAt: new Date().toLocaleString(),
-  status: "Pending",
-  paymentMethod,
-  customer: {
-    fullName,
-    email,
-    shippingAddress,
-  },
+    const order: Order = {
+      id: `MS-${Date.now()}`,
+      customerId: currentCustomer?.id,
+      createdAt: new Date().toLocaleString(),
+      status: "Pending",
+      paymentMethod,
+      customer: {
+        fullName,
+        email,
+        shippingAddress,
+      },
+      delivery: {
+        region: deliveryRegion,
+        city: deliveryCity,
+        phone: deliveryPhone,
+        fee: deliveryFee,
+      },
       items: checkoutProducts.map((product) => ({
         productId: product.id,
         name: product.name,
@@ -187,11 +218,27 @@ const order: Order = {
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t pt-4">
-          <p className="text-lg font-bold text-gray-900">Total</p>
-          <p className="text-lg font-bold text-gray-900">
-            {formatCurrency(total)}
-          </p>
+        <div className="mt-4 space-y-3 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">Subtotal</p>
+            <p className="font-semibold text-gray-900">
+              {formatCurrency(subtotal)}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <p className="text-gray-600">Delivery Fee ({deliveryRegion})</p>
+            <p className="font-semibold text-gray-900">
+              {formatCurrency(deliveryFee)}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between border-t pt-3">
+            <p className="text-lg font-bold text-gray-900">Total</p>
+            <p className="text-lg font-bold text-gray-900">
+              {formatCurrency(total)}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -235,16 +282,68 @@ const order: Order = {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Shipping Address
+            Shipping Address / Landmark
           </label>
 
           <textarea
-            placeholder="Enter your shipping address"
+            placeholder="Example: House number, street, landmark, GhanaPostGPS if available"
             value={shippingAddress}
             onChange={(event) => setShippingAddress(event.target.value)}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
             rows={4}
           />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Delivery Region
+            </label>
+
+            <select
+              value={deliveryRegion}
+              onChange={(event) => setDeliveryRegion(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            >
+              {ghanaRegions.map((region) => (
+                <option key={region} value={region}>
+                  {region}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              City / Town
+            </label>
+
+            <input
+              type="text"
+              placeholder="Example: Accra, Kumasi, Tema, Tamale"
+              value={deliveryCity}
+              onChange={(event) => setDeliveryCity(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Delivery Phone Number
+          </label>
+
+          <input
+            type="tel"
+            placeholder="Example: 0241234567"
+            value={deliveryPhone}
+            onChange={(event) => setDeliveryPhone(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+          />
+
+          <p className="mt-2 text-sm text-gray-500">
+            Use a reachable Ghana phone number for delivery calls.
+          </p>
         </div>
 
         <div>
@@ -257,12 +356,12 @@ const order: Order = {
             onChange={(event) => setPaymentMethod(event.target.value)}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
           >
-           <option value="MTN Mobile Money">MTN Mobile Money</option>
-<option value="Telecel Cash">Telecel Cash</option>
-<option value="ATMoney">ATMoney</option>
-<option value="Cash on Delivery">Cash on Delivery</option>
-<option value="Bank Transfer">Bank Transfer</option>
-<option value="Card Payment">Card Payment</option>
+            <option value="MTN Mobile Money">MTN Mobile Money</option>
+            <option value="Telecel Cash">Telecel Cash</option>
+            <option value="ATMoney">ATMoney</option>
+            <option value="Cash on Delivery">Cash on Delivery</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Card Payment">Card Payment</option>
           </select>
 
           <p className="mt-2 text-sm text-gray-500">

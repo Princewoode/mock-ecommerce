@@ -145,6 +145,15 @@ export default function AdminOrderManager() {
                 <p className="mt-1 text-gray-600">
                   Payment: {order.paymentMethod || "Not specified"}
                 </p>
+                {order.delivery && (
+  <div className="mt-2 text-gray-600">
+    <p>
+      Delivery: {order.delivery.city}, {order.delivery.region}
+    </p>
+    <p>Phone: {order.delivery.phone}</p>
+    <p>Delivery Fee: {formatCurrency(order.delivery.fee)}</p>
+  </div>
+)}
               </div>
 
               <div className="min-w-48">

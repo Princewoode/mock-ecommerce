@@ -41,6 +41,12 @@ export type Order = {
     email: string;
     shippingAddress: string;
   };
+  delivery?: {
+    region: string;
+    city: string;
+    phone: string;
+    fee: number;
+  };
   items: OrderItem[];
   total: number;
 };
