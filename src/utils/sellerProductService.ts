@@ -19,7 +19,17 @@ async function getAuthHeaders() {
 }
 
 async function handleResponse(response: Response) {
-  const result = await response.json();
+  const text = await response.text();
+
+  let result;
+
+  try {
+    result = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Server returned a non-JSON response. Check that /api/seller/products exists and restart the dev server. Status: ${response.status}`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(result.message || "Seller product request failed.");
