@@ -30,6 +30,11 @@ export type OrderItem = {
   image: string;
   price: number;
   quantity: number;
+  sellerId?: string;
+  sellerBusinessName?: string;
+  platformCommissionRate?: number;
+  platformCommissionAmount?: number;
+  sellerPayoutAmount?: number;
 };
 
 export type Order = {

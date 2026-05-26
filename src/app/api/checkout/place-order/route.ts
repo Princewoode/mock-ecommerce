@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { Order } from "@/types/models";
+import { DEFAULT_PLATFORM_COMMISSION_RATE } from "@/utils/commission";
 
 type ProductStockRow = {
   id: number;
   stock: number;
+  seller_id: string | null;
+  seller_business_name: string | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   const { data: stockData, error: stockError } = await supabaseAdmin
     .from("products")
-    .select("id, stock")
+    .select("id, stock, seller_id, seller_business_name")
     .in("id", productIds);
 
   if (stockError) {
@@ -86,7 +89,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: orderError.message }, { status: 500 });
   }
 
-  const orderItemsPayload = order.items.map((item) => ({
+  const enrichedOrderItems = order.items.map((item) => {
+    const product = databaseProducts.find(
+      (databaseProduct) => databaseProduct.id === item.productId
+    );
+
+    const grossAmount = item.price * item.quantity;
+    const platformCommissionAmount =
+      (grossAmount * DEFAULT_PLATFORM_COMMISSION_RATE) / 100;
+    const sellerPayoutAmount = grossAmount - platformCommissionAmount;
+
+    return {
+      ...item,
+      sellerId: product?.seller_id || undefined,
+      sellerBusinessName: product?.seller_business_name || "Platform Store",
+      platformCommissionRate: DEFAULT_PLATFORM_COMMISSION_RATE,
+      platformCommissionAmount,
+      sellerPayoutAmount,
+    };
+  });
+
+  const orderItemsPayload = enrichedOrderItems.map((item) => ({
     order_id: createdOrder.id,
     product_id: item.productId,
     product_name: item.name,
@@ -94,6 +117,11 @@ export async function POST(request: NextRequest) {
     product_image: item.image,
     product_price: item.price,
     quantity: item.quantity,
+    seller_id: item.sellerId || null,
+    seller_business_name: item.sellerBusinessName || "Platform Store",
+    platform_commission_rate: item.platformCommissionRate || 0,
+    platform_commission_amount: item.platformCommissionAmount || 0,
+    seller_payout_amount: item.sellerPayoutAmount || 0,
   }));
 
   const { error: orderItemsError } = await supabaseAdmin
@@ -154,7 +182,7 @@ export async function POST(request: NextRequest) {
       trackingCode: createdOrder.tracking_code || "",
       adminNote: createdOrder.admin_note || "",
     },
-    items: order.items,
+    items: enrichedOrderItems,
     total: Number(createdOrder.total),
   };
 

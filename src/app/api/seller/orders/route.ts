@@ -9,10 +9,6 @@ type DatabaseSeller = {
   status: string;
 };
 
-type DatabaseProduct = {
-  id: number;
-};
-
 type DatabaseOrderItem = {
   product_id: number;
   product_name: string;
@@ -20,6 +16,11 @@ type DatabaseOrderItem = {
   product_image: string;
   product_price: number | string;
   quantity: number;
+  seller_id: string | null;
+  seller_business_name: string | null;
+  platform_commission_rate: number | string | null;
+  platform_commission_amount: number | string | null;
+  seller_payout_amount: number | string | null;
 };
 
 type DatabaseOrder = {
@@ -66,12 +67,9 @@ async function getVerifiedSeller(request: NextRequest) {
   return seller;
 }
 
-function mapSellerOrder(
-  order: DatabaseOrder,
-  sellerProductIds: Set<number>
-): Order | null {
-  const sellerItems = order.order_items.filter((item) =>
-    sellerProductIds.has(item.product_id)
+function mapSellerOrder(order: DatabaseOrder, sellerId: string): Order | null {
+  const sellerItems = order.order_items.filter(
+    (item) => item.seller_id === sellerId
   );
 
   if (sellerItems.length === 0) {
@@ -111,6 +109,11 @@ function mapSellerOrder(
       image: item.product_image,
       price: Number(item.product_price),
       quantity: item.quantity,
+      sellerId: item.seller_id || undefined,
+      sellerBusinessName: item.seller_business_name || undefined,
+      platformCommissionRate: Number(item.platform_commission_rate || 0),
+      platformCommissionAmount: Number(item.platform_commission_amount || 0),
+      sellerPayoutAmount: Number(item.seller_payout_amount || 0),
     })),
     total: sellerSubtotal,
   };
@@ -120,31 +123,10 @@ export async function GET(request: NextRequest) {
   try {
     const seller = await getVerifiedSeller(request);
 
-    const { data: sellerProducts, error: productError } = await supabaseAdmin
-      .from("products")
-      .select("id")
-      .eq("seller_id", seller.id);
-
-    if (productError) {
-      return NextResponse.json(
-        { message: productError.message },
-        { status: 500 }
-      );
-    }
-
-    const productRows = (sellerProducts || []) as DatabaseProduct[];
-    const sellerProductIds = new Set(productRows.map((product) => product.id));
-
-    if (sellerProductIds.size === 0) {
-      return NextResponse.json({
-        orders: [],
-      });
-    }
-
     const { data: orderItemRows, error: orderItemError } = await supabaseAdmin
       .from("order_items")
-      .select("order_id, product_id")
-      .in("product_id", Array.from(sellerProductIds));
+      .select("order_id")
+      .eq("seller_id", seller.id);
 
     if (orderItemError) {
       return NextResponse.json(
@@ -159,6 +141,10 @@ export async function GET(request: NextRequest) {
 
     if (orderIds.length === 0) {
       return NextResponse.json({
+        seller: {
+          id: seller.id,
+          businessName: seller.business_name,
+        },
         orders: [],
       });
     }
@@ -174,7 +160,7 @@ export async function GET(request: NextRequest) {
     }
 
     const orders = ((orderRows || []) as DatabaseOrder[])
-      .map((order) => mapSellerOrder(order, sellerProductIds))
+      .map((order) => mapSellerOrder(order, seller.id))
       .filter(Boolean);
 
     return NextResponse.json({

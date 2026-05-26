@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductVisual from "@/components/ProductVisual";
 import { Order } from "@/types/models";
 import { formatCurrency } from "@/utils/currency";
@@ -32,6 +32,27 @@ export default function SellerOrderManager() {
     }
   }
 
+  const payoutSummary = useMemo(() => {
+    return orders.reduce(
+      (summary, order) => {
+        order.items.forEach((item) => {
+          const gross = item.price * item.quantity;
+
+          summary.grossSales += gross;
+          summary.platformCommission += item.platformCommissionAmount || 0;
+          summary.sellerPayout += item.sellerPayoutAmount || gross;
+        });
+
+        return summary;
+      },
+      {
+        grossSales: 0,
+        platformCommission: 0,
+        sellerPayout: 0,
+      }
+    );
+  }, [orders]);
+
   if (isLoading) {
     return (
       <div className="mt-10 rounded-2xl bg-white p-6 shadow-sm">
@@ -48,7 +69,8 @@ export default function SellerOrderManager() {
           <h2 className="text-2xl font-bold text-gray-900">Seller Orders</h2>
 
           <p className="mt-2 text-gray-600">
-            View orders that contain your own marketplace products only.
+            View orders, commission deductions, and estimated seller payout for
+            your products.
           </p>
         </div>
 
@@ -64,6 +86,31 @@ export default function SellerOrderManager() {
       {message && (
         <div className="mt-5 rounded-lg bg-gray-50 p-4 text-gray-700">
           {message}
+        </div>
+      )}
+
+      {orders.length > 0 && (
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-sm text-gray-500">Gross Seller Sales</p>
+            <p className="mt-1 text-xl font-bold text-gray-900">
+              {formatCurrency(payoutSummary.grossSales)}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-sm text-gray-500">Platform Commission</p>
+            <p className="mt-1 text-xl font-bold text-gray-900">
+              {formatCurrency(payoutSummary.platformCommission)}
+            </p>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-4">
+            <p className="text-sm text-gray-500">Estimated Seller Payout</p>
+            <p className="mt-1 text-xl font-bold text-gray-900">
+              {formatCurrency(payoutSummary.sellerPayout)}
+            </p>
+          </div>
         </div>
       )}
 
@@ -164,36 +211,58 @@ export default function SellerOrderManager() {
                 {order.items.map((item) => (
                   <div
                     key={`${order.id}-${item.productId}`}
-                    className="flex items-center justify-between gap-4"
+                    className="rounded-xl bg-gray-50 p-4"
                   >
-                    <div className="flex items-center gap-4">
-                      <ProductVisual
-                        image={item.image}
-                        alt={item.name}
-                        size="small"
-                      />
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <ProductVisual
+                          image={item.image}
+                          alt={item.name}
+                          size="small"
+                        />
 
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {item.name}
-                        </p>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.name}
+                          </p>
 
-                        <p className="text-gray-600">
-                          Quantity: {item.quantity}
-                        </p>
+                          <p className="text-gray-600">
+                            Quantity: {item.quantity}
+                          </p>
+                        </div>
                       </div>
+
+                      <p className="font-bold text-gray-900">
+                        {formatCurrency(item.price * item.quantity)}
+                      </p>
                     </div>
 
-                    <p className="font-bold text-gray-900">
-                      {formatCurrency(item.price * item.quantity)}
-                    </p>
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+                      <p className="text-gray-600">
+                        Commission Rate:{" "}
+                        {item.platformCommissionRate || 0}%
+                      </p>
+
+                      <p className="text-gray-600">
+                        Platform Commission:{" "}
+                        {formatCurrency(item.platformCommissionAmount || 0)}
+                      </p>
+
+                      <p className="font-semibold text-gray-900">
+                        Seller Payout:{" "}
+                        {formatCurrency(
+                          item.sellerPayoutAmount ||
+                            item.price * item.quantity
+                        )}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
 
               <div className="mt-5 flex justify-between border-t pt-5">
                 <p className="text-lg font-bold text-gray-900">
-                  Seller Subtotal
+                  Seller Order Gross
                 </p>
 
                 <p className="text-lg font-bold text-gray-900">
