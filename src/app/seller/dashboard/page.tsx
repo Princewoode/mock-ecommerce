@@ -1,4 +1,5 @@
 import SellerDashboardContent from "@/components/SellerDashboardContent";
+import SellerOrderManager from "@/components/SellerOrderManager";
 
 export default function SellerDashboardPage() {
   return (
@@ -14,12 +15,13 @@ export default function SellerDashboardPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-lg text-gray-600">
-            Verified sellers can add products, update prices, manage stock, and
-            grow their Ghana marketplace presence.
+            Verified sellers can add products, update prices, manage stock, view
+            customer orders, and grow their Ghana marketplace presence.
           </p>
         </div>
 
         <SellerDashboardContent />
+        <SellerOrderManager />
       </section>
     </main>
   );
