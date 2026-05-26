@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import AdminProductManager from "@/components/AdminProductManager";
 import AdminOrderManager from "@/components/AdminOrderManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
+import AdminSellerManager from "@/components/AdminSellerManager";
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_AUTH_KEY = "mockAdminLoggedIn";
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
@@ -115,7 +116,7 @@ export default function ProtectedAdmin() {
       <AdminProductManager />
 <AdminOrderManager />
 <AdminReviewManager />
-
+<AdminSellerManager />
     </>
   );
 }

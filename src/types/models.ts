@@ -67,3 +67,19 @@ export type ProductReview = {
   comment: string;
   createdAt: string;
 };
+
+export type SellerProfile = {
+  id: string;
+  userId?: string;
+  businessName: string;
+  ownerName: string;
+  phone: string;
+  momoNumber: string;
+  region: string;
+  city: string;
+  businessAddress: string;
+  productCategories: string;
+  status: "Pending" | "Verified" | "Rejected" | "Suspended";
+  verificationNote?: string;
+  createdAt: string;
+};
