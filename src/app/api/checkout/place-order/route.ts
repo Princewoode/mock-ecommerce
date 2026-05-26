@@ -60,23 +60,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
- const { data: createdOrder, error: orderError } = await supabaseAdmin
-  .from("orders")
-  .insert({
-    customer_id: order.customerId || null,
-    customer_name: order.customer.fullName,
-    customer_email: order.customer.email,
-    shipping_address: order.customer.shippingAddress,
-    delivery_region: order.delivery?.region || null,
-    delivery_city: order.delivery?.city || null,
-    delivery_phone: order.delivery?.phone || null,
-    delivery_fee: order.delivery?.fee || 0,
-    status: order.status || "Pending",
-    payment_method: order.paymentMethod || "Not specified",
-    total: order.total,
-  })
-  .select("*")
-  .single();
+  const { data: createdOrder, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .insert({
+      customer_id: order.customerId || null,
+      customer_name: order.customer.fullName,
+      customer_email: order.customer.email,
+      shipping_address: order.customer.shippingAddress,
+      delivery_region: order.delivery?.region || null,
+      delivery_city: order.delivery?.city || null,
+      delivery_phone: order.delivery?.phone || null,
+      delivery_fee: order.delivery?.fee || 0,
+      courier_name: "",
+      courier_phone: "",
+      tracking_code: "",
+      admin_note: "",
+      status: order.status || "Pending Payment",
+      payment_method: order.paymentMethod || "Not specified",
+      total: order.total,
+    })
+    .select("*")
+    .single();
 
   if (orderError) {
     return NextResponse.json({ message: orderError.message }, { status: 500 });
@@ -128,9 +132,9 @@ export async function POST(request: NextRequest) {
   }
 
   const savedOrder: Order = {
-  id: createdOrder.id,
-  customerId: createdOrder.customer_id || undefined,
-  createdAt: new Date(createdOrder.created_at).toLocaleString(),
+    id: createdOrder.id,
+    customerId: createdOrder.customer_id || undefined,
+    createdAt: new Date(createdOrder.created_at).toLocaleString(),
     status: createdOrder.status,
     paymentMethod: createdOrder.payment_method,
     customer: {
@@ -138,14 +142,20 @@ export async function POST(request: NextRequest) {
       email: createdOrder.customer_email,
       shippingAddress: createdOrder.shipping_address,
     },
+    delivery: {
+      region: createdOrder.delivery_region || "",
+      city: createdOrder.delivery_city || "",
+      phone: createdOrder.delivery_phone || "",
+      fee: Number(createdOrder.delivery_fee || 0),
+    },
+    fulfillment: {
+      courierName: createdOrder.courier_name || "",
+      courierPhone: createdOrder.courier_phone || "",
+      trackingCode: createdOrder.tracking_code || "",
+      adminNote: createdOrder.admin_note || "",
+    },
     items: order.items,
     total: Number(createdOrder.total),
-    delivery: {
-  region: createdOrder.delivery_region || "",
-  city: createdOrder.delivery_city || "",
-  phone: createdOrder.delivery_phone || "",
-  fee: Number(createdOrder.delivery_fee || 0),
-},
   };
 
   return NextResponse.json({

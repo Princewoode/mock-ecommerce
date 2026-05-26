@@ -47,6 +47,12 @@ export type Order = {
     phone: string;
     fee: number;
   };
+  fulfillment?: {
+    courierName?: string;
+    courierPhone?: string;
+    trackingCode?: string;
+    adminNote?: string;
+  };
   items: OrderItem[];
   total: number;
 };

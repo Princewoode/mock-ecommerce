@@ -36,7 +36,6 @@ export async function getCustomerDatabaseOrders({
   }
 
   const response = await fetch(`/api/customer/orders?${params.toString()}`);
-
   const result = await handleResponse(response);
 
   return result.orders || [];
@@ -54,10 +53,21 @@ export async function getAdminDatabaseOrders(): Promise<Order[]> {
   return result.orders || [];
 }
 
-export async function updateDatabaseOrderStatus(
-  orderId: string,
-  status: string
-) {
+export async function updateDatabaseOrderDetails({
+  orderId,
+  status,
+  courierName,
+  courierPhone,
+  trackingCode,
+  adminNote,
+}: {
+  orderId: string;
+  status: string;
+  courierName?: string;
+  courierPhone?: string;
+  trackingCode?: string;
+  adminNote?: string;
+}) {
   const response = await fetch("/api/admin/orders", {
     method: "PUT",
     headers: {
@@ -67,6 +77,10 @@ export async function updateDatabaseOrderStatus(
     body: JSON.stringify({
       orderId,
       status,
+      courierName,
+      courierPhone,
+      trackingCode,
+      adminNote,
     }),
   });
 

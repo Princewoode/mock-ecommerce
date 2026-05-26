@@ -22,6 +22,10 @@ type DatabaseOrder = {
   delivery_city: string | null;
   delivery_phone: string | null;
   delivery_fee: number | string | null;
+  courier_name: string | null;
+  courier_phone: string | null;
+  tracking_code: string | null;
+  admin_note: string | null;
   status: string;
   payment_method: string | null;
   total: number | string;
@@ -30,23 +34,29 @@ type DatabaseOrder = {
 
 function mapDatabaseOrder(order: DatabaseOrder): Order {
   return {
-  id: order.id,
-  customerId: order.customer_id || undefined,
-  createdAt: new Date(order.created_at).toLocaleString(),
+    id: order.id,
+    customerId: order.customer_id || undefined,
+    createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
-   customer: {
-  fullName: order.customer_name,
-  email: order.customer_email,
-  shippingAddress: order.shipping_address,
-},
-delivery: {
-  region: order.delivery_region || "",
-  city: order.delivery_city || "",
-  phone: order.delivery_phone || "",
-  fee: Number(order.delivery_fee || 0),
-},
-items: order.order_items.map((item) => ({
+    customer: {
+      fullName: order.customer_name,
+      email: order.customer_email,
+      shippingAddress: order.shipping_address,
+    },
+    delivery: {
+      region: order.delivery_region || "",
+      city: order.delivery_city || "",
+      phone: order.delivery_phone || "",
+      fee: Number(order.delivery_fee || 0),
+    },
+    fulfillment: {
+      courierName: order.courier_name || "",
+      courierPhone: order.courier_phone || "",
+      trackingCode: order.tracking_code || "",
+      adminNote: order.admin_note || "",
+    },
+    items: order.order_items.map((item) => ({
       productId: item.product_id,
       name: item.product_name,
       category: item.product_category,
@@ -61,27 +71,27 @@ items: order.order_items.map((item) => ({
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get("email");
-const customerId = searchParams.get("customerId");
+  const customerId = searchParams.get("customerId");
 
-if (!email && !customerId) {
-  return NextResponse.json(
-    { message: "Customer email or customer ID is required." },
-    { status: 400 }
-  );
-}
+  if (!email && !customerId) {
+    return NextResponse.json(
+      { message: "Customer email or customer ID is required." },
+      { status: 400 }
+    );
+  }
 
-let query = supabaseAdmin
-  .from("orders")
-  .select("*, order_items(*)")
-  .order("created_at", { ascending: false });
+  let query = supabaseAdmin
+    .from("orders")
+    .select("*, order_items(*)")
+    .order("created_at", { ascending: false });
 
-if (customerId) {
-  query = query.eq("customer_id", customerId);
-} else if (email) {
-  query = query.eq("customer_email", email);
-}
+  if (customerId) {
+    query = query.eq("customer_id", customerId);
+  } else if (email) {
+    query = query.eq("customer_email", email);
+  }
 
-const { data, error } = await query;
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });

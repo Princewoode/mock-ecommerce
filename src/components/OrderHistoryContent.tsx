@@ -8,6 +8,7 @@ import { getCurrentCustomer } from "@/utils/authStorage";
 import { getOrdersByCustomerEmail } from "@/utils/orderStorage";
 import { getCustomerDatabaseOrders } from "@/utils/databaseOrderService";
 import { formatCurrency } from "@/utils/currency";
+
 export default function OrderHistoryContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customerEmail, setCustomerEmail] = useState("");
@@ -29,13 +30,15 @@ export default function OrderHistoryContent() {
 
       try {
         const databaseOrders = await getCustomerDatabaseOrders({
-  email: customer.email,
-  customerId: customer.id,
-});
+          email: customer.email,
+          customerId: customer.id,
+        });
+
         setOrders(databaseOrders);
         setMessage("");
-      } catch (error) {
+      } catch {
         const fallbackOrders = getOrdersByCustomerEmail(customer.email);
+
         setOrders(fallbackOrders);
         setMessage(
           "Could not load database orders. Showing local fallback orders."
@@ -107,26 +110,63 @@ export default function OrderHistoryContent() {
               <p className="mt-1 text-gray-600">{order.createdAt}</p>
 
               <p className="mt-1 font-semibold text-gray-900">
-                Status: {order.status || "Pending"}
+                Status: {order.status || "Pending Payment"}
               </p>
 
               <p className="mt-1 text-gray-600">
                 Payment: {order.paymentMethod || "Not specified"}
               </p>
+
+              {order.delivery && (
+                <div className="mt-3 rounded-xl bg-gray-50 p-4 text-gray-700">
+                  <p className="font-semibold text-gray-900">
+                    Delivery Details
+                  </p>
+
+                  <p className="mt-1">
+                    Location: {order.delivery.city}, {order.delivery.region}
+                  </p>
+
+                  <p>Phone: {order.delivery.phone}</p>
+
+                  <p>Delivery Fee: {formatCurrency(order.delivery.fee)}</p>
+                </div>
+              )}
+
+              {order.fulfillment && (
+                <div className="mt-3 rounded-xl bg-gray-50 p-4 text-gray-700">
+                  <p className="font-semibold text-gray-900">
+                    Fulfilment Updates
+                  </p>
+
+                  {order.fulfillment.trackingCode && (
+                    <p className="mt-1">
+                      Tracking Code: {order.fulfillment.trackingCode}
+                    </p>
+                  )}
+
+                  {order.fulfillment.courierName && (
+                    <p>Courier: {order.fulfillment.courierName}</p>
+                  )}
+
+                  {order.fulfillment.courierPhone && (
+                    <p>Courier Phone: {order.fulfillment.courierPhone}</p>
+                  )}
+
+                  {!order.fulfillment.trackingCode &&
+                    !order.fulfillment.courierName &&
+                    !order.fulfillment.courierPhone && (
+                      <p className="mt-1">
+                        Fulfilment details will appear here after dispatch.
+                      </p>
+                    )}
+                </div>
+              )}
             </div>
 
             <p className="text-xl font-bold text-gray-900">
-             {formatCurrency(order.total)}
+              {formatCurrency(order.total)}
             </p>
-            {order.delivery && (
-  <div className="mt-2 text-gray-600">
-    <p>
-      Delivery: {order.delivery.city}, {order.delivery.region}
-    </p>
-    <p>Phone: {order.delivery.phone}</p>
-    <p>Delivery Fee: {formatCurrency(order.delivery.fee)}</p>
-  </div>
-)}
           </div>
 
           <div className="mt-4 space-y-4">
