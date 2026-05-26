@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { getCurrentCustomer } from "@/utils/authStorage";
 import { ghanaRegions } from "@/utils/ghanaDelivery";
 import { submitSellerApplication } from "@/utils/sellerService";
 
@@ -20,14 +19,11 @@ export default function SellerApplyContent() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const customer = getCurrentCustomer();
-
     try {
       setIsSubmitting(true);
       setMessage("");
 
       const result = await submitSellerApplication({
-        userId: customer?.id,
         businessName,
         ownerName,
         phone,
@@ -71,7 +67,8 @@ export default function SellerApplyContent() {
 
         <p className="mt-2 text-gray-600">
           Apply to sell on the platform. Admin verification is required before
-          sellers can publish products at scale.
+          sellers can publish products at scale. Please log in before
+          submitting your application.
         </p>
       </div>
 
@@ -178,7 +175,7 @@ export default function SellerApplyContent() {
         <textarea
           value={businessAddress}
           onChange={(event) => setBusinessAddress(event.target.value)}
-          placeholder="Example: Near Kaneshie Market, opposite..."
+          placeholder="Example: Near Makola Market, opposite..."
           rows={3}
           className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
         />
