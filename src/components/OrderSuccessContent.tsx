@@ -16,6 +16,7 @@ type OrderItem = {
 
 type Order = {
   id: string;
+  customerId?: string;
   createdAt: string;
   status: string;
   paymentMethod?: string;
@@ -23,6 +24,12 @@ type Order = {
     fullName: string;
     email: string;
     shippingAddress: string;
+  };
+  delivery?: {
+    region: string;
+    city: string;
+    phone: string;
+    fee: number;
   };
   items: OrderItem[];
   total: number;
