@@ -143,6 +143,7 @@ export default function ProductList() {
                   price={product.price}
                   image={product.image}
                   stock={product.stock}
+                  sellerId={product.sellerId}
                   sellerBusinessName={product.sellerBusinessName}
                 />
               ))}

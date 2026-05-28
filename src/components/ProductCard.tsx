@@ -12,6 +12,7 @@ type ProductCardProps = {
   price: number;
   image?: string;
   stock?: number;
+  sellerId?: string;
   sellerBusinessName?: string;
 };
 
@@ -23,6 +24,7 @@ export default function ProductCard({
   price,
   image,
   stock = 0,
+  sellerId,
   sellerBusinessName,
 }: ProductCardProps) {
   const isOutOfStock = stock <= 0;
@@ -58,7 +60,16 @@ export default function ProductCard({
 
       <h2 className="mt-2 text-xl font-bold text-gray-900">{name}</h2>
 
-      {sellerBusinessName && (
+      {sellerBusinessName && sellerId && (
+        <Link
+          href={`/sellers/${sellerId}`}
+          className="mt-1 inline-block text-sm font-medium text-blue-700 hover:underline"
+        >
+          Sold by {sellerBusinessName} ✓
+        </Link>
+      )}
+
+      {sellerBusinessName && !sellerId && (
         <p className="mt-1 text-sm font-medium text-gray-600">
           Sold by {sellerBusinessName}
         </p>

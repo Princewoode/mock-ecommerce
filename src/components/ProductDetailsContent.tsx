@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
-import { StoreProduct } from "@/types/models";
-import { getProductCatalog } from "@/utils/productCatalogService";
-import ProductVisual from "@/components/ProductVisual";
 import ProductReviews from "@/components/ProductReviews";
+import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
+import { StoreProduct } from "@/types/models";
 import { formatCurrency } from "@/utils/currency";
+import { getProductCatalog } from "@/utils/productCatalogService";
+
 type ProductDetailsContentProps = {
   productId: number;
 };
@@ -16,110 +17,118 @@ type ProductDetailsContentProps = {
 export default function ProductDetailsContent({
   productId,
 }: ProductDetailsContentProps) {
-  const [product, setProduct] = useState<StoreProduct | null | undefined>(
-    undefined
-  );
+  const [product, setProduct] = useState<StoreProduct | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-  async function loadProduct() {
-    const products = await getProductCatalog();
-    const foundProduct =
-      products.find((item) => item.id === productId) || null;
+    async function loadProduct() {
+      setIsLoading(true);
 
-    setProduct(foundProduct);
-  }
+      const products = await getProductCatalog();
+      const foundProduct =
+        products.find((item) => item.id === productId) || null;
 
-  loadProduct();
+      setProduct(foundProduct);
+      setIsLoading(false);
+    }
 
-  window.addEventListener("productsUpdated", loadProduct);
+    loadProduct();
 
-  return () => {
-    window.removeEventListener("productsUpdated", loadProduct);
-  };
-}, [productId]);
+    window.addEventListener("productsUpdated", loadProduct);
 
-  if (product === undefined) {
+    return () => {
+      window.removeEventListener("productsUpdated", loadProduct);
+    };
+  }, [productId]);
+
+  if (isLoading) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-16">
-        <section className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-          <p className="text-gray-600">Loading product...</p>
-        </section>
-      </main>
+      <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+        <p className="text-gray-600">Loading product details...</p>
+      </div>
     );
   }
 
   if (!product) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-16">
-        <section className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Product Not Found
-          </h1>
+      <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+        <p className="text-gray-600">Product not found or not approved.</p>
 
-          <Link
-            href="/products"
-            className="mt-6 inline-block rounded-lg bg-black px-6 py-3 text-white"
-          >
-            Back to Products
-          </Link>
-        </section>
-      </main>
+        <Link
+          href="/products"
+          className="mt-6 inline-block rounded-lg bg-black px-6 py-3 text-white"
+        >
+          Back to Products
+        </Link>
+      </div>
     );
   }
 
+  const isOutOfStock = product.stock <= 0;
+
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-16">
-      <section className="mx-auto max-w-3xl rounded-2xl bg-white p-8 shadow-sm">
-        <div className="mb-6">
-          <ProductVisual image={product.image} alt={product.name} size="large" />
+    <>
+      <div className="mt-8 grid gap-8 rounded-3xl bg-white p-8 shadow-sm lg:grid-cols-[1fr_1.2fr]">
+        <ProductVisual image={product.image} alt={product.name} size="large" />
+
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+            {product.category}
+          </p>
+
+          <h1 className="mt-3 text-4xl font-bold text-gray-900">
+            {product.name}
+          </h1>
+
+          {product.sellerBusinessName && product.sellerId && (
+            <Link
+              href={`/sellers/${product.sellerId}`}
+              className="mt-3 inline-block rounded-full bg-green-50 px-4 py-2 text-sm font-semibold text-green-800 hover:underline"
+            >
+              Verified Seller: {product.sellerBusinessName} ✓
+            </Link>
+          )}
+
+          {product.sellerBusinessName && !product.sellerId && (
+            <p className="mt-3 text-sm font-semibold text-gray-600">
+              Sold by {product.sellerBusinessName}
+            </p>
+          )}
+
+          <ProductRatingSummary productId={product.id} />
+
+          <p className="mt-5 text-gray-700">{product.description}</p>
+
+          <p className="mt-6 text-3xl font-bold text-gray-900">
+            {formatCurrency(product.price)}
+          </p>
+
+          <p
+            className={`mt-4 inline-block rounded-full px-4 py-2 text-sm font-semibold ${
+              isOutOfStock
+                ? "bg-red-50 text-red-700"
+                : "bg-green-50 text-green-700"
+            }`}
+          >
+            {isOutOfStock
+              ? "Out of Stock"
+              : `Available Stock: ${product.stock}`}
+          </p>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/products"
+              className="rounded-lg border border-gray-300 px-6 py-3 text-center text-gray-900"
+            >
+              Back to Products
+            </Link>
+
+            {!isOutOfStock && <AddToCartButton productId={product.id} />}
+          </div>
         </div>
+      </div>
 
-        <p className="text-sm text-gray-500">{product.category}</p>
-
-        <h1 className="mt-2 text-4xl font-bold text-gray-900">
-          {product.name}
-        </h1>
-<ProductRatingSummary productId={product.id} />
-        <p className="mt-4 text-lg text-gray-600">{product.description}</p>
-
-        <p className="mt-6 text-2xl font-bold text-gray-900">
-  {formatCurrency(product.price)}
-</p>
-
-<p
-  className={`mt-3 inline-block rounded-full px-4 py-2 text-sm font-semibold ${
-    product.stock <= 0
-      ? "bg-red-50 text-red-700"
-      : product.stock <= 3
-        ? "bg-yellow-50 text-yellow-700"
-        : "bg-green-50 text-green-700"
-  }`}
->
-  {product.stock <= 0
-    ? "Out of Stock"
-    : product.stock <= 3
-      ? `Low Stock: ${product.stock} left`
-      : `In Stock: ${product.stock} available`}
-</p>
-
-<div className="mt-6">
-  {product.stock > 0 ? (
-    <AddToCartButton productId={product.id} />
-  ) : (
-    <button
-      type="button"
-      disabled
-      className="rounded-lg bg-gray-200 px-5 py-2 text-gray-500"
-    >
-      Unavailable
-    </button>
-  )}
-</div>
-           </section>
-
-      <section className="mx-auto max-w-3xl">
-        <ProductReviews productId={product.id} />
-      </section>
-    </main>
+      <ProductReviews productId={product.id} />
+    </>
   );
 }
