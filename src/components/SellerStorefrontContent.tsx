@@ -60,72 +60,108 @@ export default function SellerStorefrontContent({
 
   return (
     <>
-      <div className="mt-8 rounded-3xl bg-white p-8 shadow-sm">
-        <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-green-700">
-              Verified Ghana Seller
-            </p>
+      <div className="mt-8 overflow-hidden rounded-3xl bg-white shadow-sm">
+        {seller.bannerUrl ? (
+          <img
+            src={seller.bannerUrl}
+            alt={`${seller.businessName} banner`}
+            className="h-56 w-full object-cover"
+          />
+        ) : (
+          <div className="h-40 w-full bg-gradient-to-r from-gray-900 to-gray-600" />
+        )}
 
-            <h1 className="mt-3 text-4xl font-bold text-gray-900">
-              {seller.businessName}
-            </h1>
+        <div className="p-8">
+          <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+            <div>
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <div className="-mt-20 flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-gray-100 text-4xl shadow-sm">
+                  {seller.logoUrl ? (
+                    <img
+                      src={seller.logoUrl}
+                      alt={`${seller.businessName} logo`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    "🏪"
+                  )}
+                </div>
 
-            <p className="mt-3 text-lg text-gray-600">
-              {seller.city}, {seller.region}
-            </p>
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-green-700">
+                    Verified Ghana Seller
+                  </p>
 
-            <p className="mt-3 max-w-3xl text-gray-600">
-              Categories: {seller.productCategories}
-            </p>
+                  <h1 className="mt-2 text-4xl font-bold text-gray-900">
+                    {seller.businessName}
+                  </h1>
 
-            <p className="mt-3 max-w-3xl text-gray-600">
-              Business Address / Landmark: {seller.businessAddress}
-            </p>
+                  <p className="mt-2 text-lg text-gray-600">
+                    {seller.city}, {seller.region}
+                  </p>
+                </div>
+              </div>
 
-            <div className="mt-5 inline-flex rounded-full bg-green-50 px-4 py-2 text-sm font-semibold text-green-800">
-              Verified Seller ✓
+              {seller.storeDescription && (
+                <p className="mt-6 max-w-3xl text-gray-700">
+                  {seller.storeDescription}
+                </p>
+              )}
+
+              <p className="mt-4 max-w-3xl text-gray-600">
+                Categories: {seller.productCategories}
+              </p>
+
+              <p className="mt-3 max-w-3xl text-gray-600">
+                Business Address / Landmark: {seller.businessAddress}
+              </p>
+
+              <div className="mt-5 inline-flex rounded-full bg-green-50 px-4 py-2 text-sm font-semibold text-green-800">
+                Verified Seller ✓
+              </div>
             </div>
+
+            {trustStats && (
+              <div className="rounded-2xl bg-gray-50 p-5">
+                <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+                  Seller Trust Score
+                </p>
+
+                <div className="mt-3 flex items-end gap-2">
+                  <p className="text-5xl font-bold text-gray-900">
+                    {trustStats.trustScore}
+                  </p>
+
+                  <p className="pb-2 text-gray-500">/ 100</p>
+                </div>
+
+                <p className="mt-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-gray-800">
+                  {trustStats.trustLabel}
+                </p>
+
+                <div className="mt-5 grid gap-3 text-sm text-gray-700">
+                  <p>
+                    ⭐ Average Rating:{" "}
+                    {trustStats.reviewCount > 0
+                      ? `${trustStats.averageRating.toFixed(1)} / 5`
+                      : "No reviews yet"}
+                  </p>
+
+                  <p>Reviews: {trustStats.reviewCount}</p>
+                  <p>Approved Products: {trustStats.approvedProductCount}</p>
+                  <p>Delivered Orders: {trustStats.deliveredOrders}</p>
+                  <p>
+                    Cancelled / Refunded Orders: {trustStats.cancelledOrders}
+                  </p>
+                </div>
+
+                <p className="mt-4 text-xs text-gray-500">
+                  Trust score is based on verified status, product reviews,
+                  delivered orders, and cancellation/refund history.
+                </p>
+              </div>
+            )}
           </div>
-
-          {trustStats && (
-            <div className="rounded-2xl bg-gray-50 p-5">
-              <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                Seller Trust Score
-              </p>
-
-              <div className="mt-3 flex items-end gap-2">
-                <p className="text-5xl font-bold text-gray-900">
-                  {trustStats.trustScore}
-                </p>
-
-                <p className="pb-2 text-gray-500">/ 100</p>
-              </div>
-
-              <p className="mt-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-gray-800">
-                {trustStats.trustLabel}
-              </p>
-
-              <div className="mt-5 grid gap-3 text-sm text-gray-700">
-                <p>
-                  ⭐ Average Rating:{" "}
-                  {trustStats.reviewCount > 0
-                    ? `${trustStats.averageRating.toFixed(1)} / 5`
-                    : "No reviews yet"}
-                </p>
-
-                <p>Reviews: {trustStats.reviewCount}</p>
-                <p>Approved Products: {trustStats.approvedProductCount}</p>
-                <p>Delivered Orders: {trustStats.deliveredOrders}</p>
-                <p>Cancelled / Refunded Orders: {trustStats.cancelledOrders}</p>
-              </div>
-
-              <p className="mt-4 text-xs text-gray-500">
-                Trust score is based on verified status, product reviews,
-                delivered orders, and cancellation/refund history.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 

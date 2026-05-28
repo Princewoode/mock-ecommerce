@@ -90,6 +90,9 @@ export type SellerProfile = {
   productCategories: string;
   status: "Pending" | "Verified" | "Rejected" | "Suspended";
   verificationNote?: string;
+  storeDescription?: string;
+  logoUrl?: string;
+  bannerUrl?: string;
   createdAt: string;
 };
 
@@ -101,5 +104,9 @@ export type SellerTrustStats = {
   deliveredOrders: number;
   cancelledOrders: number;
   trustScore: number;
-  trustLabel: "New Seller" | "Trusted Seller" | "Top Trusted Seller" | "Needs Review";
+  trustLabel:
+    | "New Seller"
+    | "Trusted Seller"
+    | "Top Trusted Seller"
+    | "Needs Review";
 };

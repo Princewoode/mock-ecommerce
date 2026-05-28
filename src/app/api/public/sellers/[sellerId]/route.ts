@@ -11,6 +11,9 @@ type SellerRow = {
   product_categories: string;
   status: string;
   verification_note: string | null;
+  store_description: string | null;
+  logo_url: string | null;
+  banner_url: string | null;
   created_at: string;
 };
 
@@ -106,7 +109,7 @@ export async function GET(
   const { data: sellerData, error: sellerError } = await supabaseAdmin
     .from("sellers")
     .select(
-      "id, business_name, owner_name, region, city, business_address, product_categories, status, verification_note, created_at"
+      "id, business_name, owner_name, region, city, business_address, product_categories, status, verification_note, store_description, logo_url, banner_url, created_at"
     )
     .eq("id", sellerId)
     .eq("status", "Verified")
@@ -230,6 +233,9 @@ export async function GET(
       productCategories: seller.product_categories,
       status: seller.status,
       verificationNote: seller.verification_note || "",
+      storeDescription: seller.store_description || "",
+      logoUrl: seller.logo_url || "",
+      bannerUrl: seller.banner_url || "",
       createdAt: new Date(seller.created_at).toLocaleString(),
     },
     products,
