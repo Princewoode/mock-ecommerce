@@ -12,11 +12,14 @@ import { addOrder } from "@/utils/orderStorage";
 import { getProductCatalog } from "@/utils/productCatalogService";
 import { reduceStockAfterOrder } from "@/utils/productStorage";
 import { createDatabaseOrder } from "@/utils/supabaseOrderService";
+import { getInitialOrderStatus } from "@/utils/orderStatus";
 import {
   getDeliveryFee,
   ghanaRegions,
   isValidGhanaPhoneNumber,
 } from "@/utils/ghanaDelivery";
+
+const momoPaymentMethods = ["MTN Mobile Money", "Telecel Cash", "ATMoney"];
 
 export default function CheckoutContent() {
   const router = useRouter();
@@ -31,6 +34,8 @@ export default function CheckoutContent() {
   const [deliveryCity, setDeliveryCity] = useState("");
   const [deliveryPhone, setDeliveryPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("MTN Mobile Money");
+  const [paymentPhone, setPaymentPhone] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [formError, setFormError] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -72,6 +77,7 @@ export default function CheckoutContent() {
 
   const deliveryFee = getDeliveryFee(deliveryRegion);
   const total = subtotal + deliveryFee;
+  const requiresMomoDetails = momoPaymentMethods.includes(paymentMethod);
 
   async function handlePlaceOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,7 +95,19 @@ export default function CheckoutContent() {
 
     if (!isValidGhanaPhoneNumber(deliveryPhone)) {
       setFormError(
-        "Please enter a valid Ghana phone number, for example 0241234567 or +233241234567."
+        "Please enter a valid Ghana delivery phone number, for example 0241234567 or +233241234567."
+      );
+      return;
+    }
+
+    if (requiresMomoDetails && !paymentPhone.trim()) {
+      setFormError("Please enter the Mobile Money number used for payment.");
+      return;
+    }
+
+    if (requiresMomoDetails && !isValidGhanaPhoneNumber(paymentPhone)) {
+      setFormError(
+        "Please enter a valid Ghana Mobile Money number, for example 0241234567 or +233241234567."
       );
       return;
     }
@@ -112,12 +130,25 @@ export default function CheckoutContent() {
 
     const currentCustomer = getCurrentCustomer();
 
+    const paymentStatus =
+      paymentMethod === "Cash on Delivery" ? "Pay on Delivery" : "Pending";
+
     const order: Order = {
       id: `MS-${Date.now()}`,
       customerId: currentCustomer?.id,
       createdAt: new Date().toLocaleString(),
-      status: "Pending",
+      status: getInitialOrderStatus(paymentMethod),
       paymentMethod,
+      payment: {
+        status: paymentStatus,
+        phone: paymentPhone,
+        reference: paymentReference,
+        note:
+          paymentMethod === "Cash on Delivery"
+            ? "Customer selected cash on delivery."
+            : "Payment is pending admin confirmation.",
+        escrowStatus: "Held",
+      },
       customer: {
         fullName,
         email,
@@ -365,16 +396,59 @@ export default function CheckoutContent() {
           </select>
 
           <p className="mt-2 text-sm text-gray-500">
-            This is a mock payment method. No real payment will be processed.
+            Mobile Money orders remain pending until admin confirms payment.
           </p>
         </div>
+
+        {requiresMomoDetails && (
+          <div className="rounded-xl bg-yellow-50 p-5">
+            <h3 className="font-semibold text-gray-900">
+              Mobile Money Payment Details
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-600">
+              Enter the MoMo number used for payment. Transaction reference can
+              be added now or confirmed later by admin.
+            </p>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  MoMo Payment Number
+                </label>
+
+                <input
+                  type="tel"
+                  placeholder="Example: 0241234567"
+                  value={paymentPhone}
+                  onChange={(event) => setPaymentPhone(event.target.value)}
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Payment Reference / Transaction ID
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Example: MOMO-REF-12345"
+                  value={paymentReference}
+                  onChange={(event) => setPaymentReference(event.target.value)}
+                  className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={isPlacingOrder}
           className="rounded-lg bg-black px-6 py-3 text-white disabled:bg-gray-400"
         >
-          {isPlacingOrder ? "Placing Order..." : "Place Mock Order"}
+          {isPlacingOrder ? "Placing Order..." : "Place Order"}
         </button>
       </form>
     </>

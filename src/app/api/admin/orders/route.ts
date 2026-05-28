@@ -9,6 +9,11 @@ type DatabaseOrderItem = {
   product_image: string;
   product_price: number | string;
   quantity: number;
+  seller_id: string | null;
+  seller_business_name: string | null;
+  platform_commission_rate: number | string | null;
+  platform_commission_amount: number | string | null;
+  seller_payout_amount: number | string | null;
 };
 
 type DatabaseOrder = {
@@ -22,6 +27,12 @@ type DatabaseOrder = {
   delivery_city: string | null;
   delivery_phone: string | null;
   delivery_fee: number | string | null;
+  payment_status: string | null;
+  payment_phone: string | null;
+  payment_reference: string | null;
+  payment_note: string | null;
+  payment_confirmed_at: string | null;
+  escrow_status: string | null;
   courier_name: string | null;
   courier_phone: string | null;
   tracking_code: string | null;
@@ -46,6 +57,16 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
     createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
+    payment: {
+      status: order.payment_status || "Pending",
+      phone: order.payment_phone || "",
+      reference: order.payment_reference || "",
+      note: order.payment_note || "",
+      confirmedAt: order.payment_confirmed_at
+        ? new Date(order.payment_confirmed_at).toLocaleString()
+        : "",
+      escrowStatus: order.escrow_status || "Held",
+    },
     customer: {
       fullName: order.customer_name,
       email: order.customer_email,
@@ -70,6 +91,11 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
       image: item.product_image,
       price: Number(item.product_price),
       quantity: item.quantity,
+      sellerId: item.seller_id || undefined,
+      sellerBusinessName: item.seller_business_name || undefined,
+      platformCommissionRate: Number(item.platform_commission_rate || 0),
+      platformCommissionAmount: Number(item.platform_commission_amount || 0),
+      sellerPayoutAmount: Number(item.seller_payout_amount || 0),
     })),
     total: Number(order.total),
   };
@@ -114,12 +140,21 @@ export async function PUT(request: NextRequest) {
   const trackingCode = String(payload.trackingCode || "");
   const adminNote = String(payload.adminNote || "");
 
+  const paymentStatus = String(payload.paymentStatus || "Pending");
+  const paymentPhone = String(payload.paymentPhone || "");
+  const paymentReference = String(payload.paymentReference || "");
+  const paymentNote = String(payload.paymentNote || "");
+  const escrowStatus = String(payload.escrowStatus || "Held");
+
   if (!orderId || !status) {
     return NextResponse.json(
       { message: "Order ID and status are required." },
       { status: 400 }
     );
   }
+
+  const paymentConfirmedAt =
+    paymentStatus === "Confirmed" ? new Date().toISOString() : null;
 
   const { error } = await supabaseAdmin
     .from("orders")
@@ -129,6 +164,12 @@ export async function PUT(request: NextRequest) {
       courier_phone: courierPhone,
       tracking_code: trackingCode,
       admin_note: adminNote,
+      payment_status: paymentStatus,
+      payment_phone: paymentPhone,
+      payment_reference: paymentReference,
+      payment_note: paymentNote,
+      payment_confirmed_at: paymentConfirmedAt,
+      escrow_status: escrowStatus,
     })
     .eq("id", orderId);
 
@@ -137,7 +178,7 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({
-    message: "Order fulfilment details updated successfully.",
+    message: "Order payment and fulfilment details updated successfully.",
   });
 }
 

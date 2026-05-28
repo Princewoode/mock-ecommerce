@@ -45,6 +45,14 @@ export type Order = {
   createdAt: string;
   status: string;
   paymentMethod?: string;
+  payment?: {
+    status: string;
+    phone?: string;
+    reference?: string;
+    note?: string;
+    confirmedAt?: string;
+    escrowStatus?: string;
+  };
   customer: {
     fullName: string;
     email: string;

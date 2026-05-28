@@ -74,6 +74,12 @@ export async function POST(request: NextRequest) {
       delivery_city: order.delivery?.city || null,
       delivery_phone: order.delivery?.phone || null,
       delivery_fee: order.delivery?.fee || 0,
+      payment_status: order.payment?.status || "Pending",
+      payment_phone: order.payment?.phone || null,
+      payment_reference: order.payment?.reference || null,
+      payment_note: order.payment?.note || "",
+      payment_confirmed_at: null,
+      escrow_status: order.payment?.escrowStatus || "Held",
       courier_name: "",
       courier_phone: "",
       tracking_code: "",
@@ -165,6 +171,16 @@ export async function POST(request: NextRequest) {
     createdAt: new Date(createdOrder.created_at).toLocaleString(),
     status: createdOrder.status,
     paymentMethod: createdOrder.payment_method,
+    payment: {
+      status: createdOrder.payment_status || "Pending",
+      phone: createdOrder.payment_phone || "",
+      reference: createdOrder.payment_reference || "",
+      note: createdOrder.payment_note || "",
+      confirmedAt: createdOrder.payment_confirmed_at
+        ? new Date(createdOrder.payment_confirmed_at).toLocaleString()
+        : "",
+      escrowStatus: createdOrder.escrow_status || "Held",
+    },
     customer: {
       fullName: createdOrder.customer_name,
       email: createdOrder.customer_email,

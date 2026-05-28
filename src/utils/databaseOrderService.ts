@@ -11,7 +11,17 @@ function getAdminApiPassword() {
 }
 
 async function handleResponse(response: Response) {
-  const result = await response.json();
+  const text = await response.text();
+
+  let result;
+
+  try {
+    result = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Server returned a non-JSON response. Check order API route. Status: ${response.status}`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(result.message || "Database order request failed.");
@@ -60,6 +70,11 @@ export async function updateDatabaseOrderDetails({
   courierPhone,
   trackingCode,
   adminNote,
+  paymentStatus,
+  paymentPhone,
+  paymentReference,
+  paymentNote,
+  escrowStatus,
 }: {
   orderId: string;
   status: string;
@@ -67,6 +82,11 @@ export async function updateDatabaseOrderDetails({
   courierPhone?: string;
   trackingCode?: string;
   adminNote?: string;
+  paymentStatus?: string;
+  paymentPhone?: string;
+  paymentReference?: string;
+  paymentNote?: string;
+  escrowStatus?: string;
 }) {
   const response = await fetch("/api/admin/orders", {
     method: "PUT",
@@ -81,6 +101,11 @@ export async function updateDatabaseOrderDetails({
       courierPhone,
       trackingCode,
       adminNote,
+      paymentStatus,
+      paymentPhone,
+      paymentReference,
+      paymentNote,
+      escrowStatus,
     }),
   });
 
