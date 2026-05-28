@@ -1,4 +1,8 @@
-import { SellerProfile, StoreProduct } from "@/types/models";
+import {
+  SellerProfile,
+  SellerTrustStats,
+  StoreProduct,
+} from "@/types/models";
 
 async function handleResponse(response: Response) {
   const text = await response.text();
@@ -25,6 +29,7 @@ export async function getPublicSellerStorefront(
 ): Promise<{
   seller: SellerProfile;
   products: StoreProduct[];
+  trustStats: SellerTrustStats;
 }> {
   const response = await fetch(`/api/public/sellers/${sellerId}`);
 

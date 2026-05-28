@@ -92,3 +92,14 @@ export type SellerProfile = {
   verificationNote?: string;
   createdAt: string;
 };
+
+export type SellerTrustStats = {
+  averageRating: number;
+  reviewCount: number;
+  approvedProductCount: number;
+  totalSellerOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  trustScore: number;
+  trustLabel: "New Seller" | "Trusted Seller" | "Top Trusted Seller" | "Needs Review";
+};
