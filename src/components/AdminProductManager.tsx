@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import ProductVisual from "@/components/ProductVisual";
 import {
   AdminProduct,
   createAdminProduct,
@@ -9,6 +10,8 @@ import {
   updateAdminProduct,
 } from "@/utils/adminProductApi";
 import { formatCurrency } from "@/utils/currency";
+import { uploadProductImage } from "@/utils/imageUploadService";
+
 export default function AdminProductManager() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -19,9 +22,11 @@ export default function AdminProductManager() {
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
   const [stock, setStock] = useState("");
+
   const [formError, setFormError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -66,7 +71,7 @@ export default function AdminProductManager() {
       !image.trim() ||
       !stock.trim()
     ) {
-      return "Please fill in all product fields.";
+      return "Please fill in all product fields and upload or enter an image.";
     }
 
     const numericPrice = Number(price);
@@ -85,6 +90,29 @@ export default function AdminProductManager() {
     }
 
     return "";
+  }
+
+  async function handleImageUpload(file: File | null) {
+    if (!file) {
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      setFormError("");
+      setStatusMessage("");
+
+      const imageUrl = await uploadProductImage(file);
+
+      setImage(imageUrl);
+      setStatusMessage("Image uploaded successfully.");
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : "Image upload failed."
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -177,7 +205,8 @@ export default function AdminProductManager() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Manage products directly in your Supabase database.
+            Manage marketplace products directly in Supabase. Use real product
+            images for buyer trust.
           </p>
         </div>
 
@@ -229,7 +258,7 @@ export default function AdminProductManager() {
           <textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Describe the product"
+            placeholder="Describe the product clearly for Ghanaian buyers"
             rows={4}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
@@ -238,7 +267,7 @@ export default function AdminProductManager() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Price
+              Price in GH₵
             </label>
 
             <input
@@ -267,15 +296,38 @@ export default function AdminProductManager() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Image Path or Emoji
+            Product Image
           </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) =>
+              handleImageUpload(event.target.files?.[0] || null)
+            }
+            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+          />
+
+          <p className="mt-2 text-sm text-gray-500">
+            Upload a clear product photo. Maximum size: 5MB.
+          </p>
+
+          {isUploadingImage && (
+            <p className="mt-2 text-sm text-gray-600">Uploading image...</p>
+          )}
+
+          {image && (
+            <div className="mt-4">
+              <ProductVisual image={image} alt={name || "Product image"} />
+            </div>
+          )}
 
           <input
             type="text"
             value={image}
             onChange={(event) => setImage(event.target.value)}
-            placeholder="Example: 🎧 or /products/headphones.jpg"
-            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            placeholder="Or paste image URL / emoji"
+            className="mt-3 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
         </div>
 
@@ -317,50 +369,68 @@ export default function AdminProductManager() {
                 key={product.id}
                 className="rounded-xl border border-gray-200 p-4"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {product.name}
-                    </p>
+                <div className="flex gap-4">
+                  <ProductVisual
+                    image={product.image}
+                    alt={product.name}
+                    size="small"
+                  />
 
-                    <p className="text-gray-600">{product.category}</p>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {product.name}
+                        </p>
 
-                    <p className="text-sm text-gray-500">
-                      Stock: {product.stock}
-                    </p>
+                        <p className="text-gray-600">{product.category}</p>
 
-                    {product.isDefault && (
-                      <p className="mt-1 text-xs font-semibold text-blue-700">
-                        Default product
+                        <p className="text-sm text-gray-500">
+                          Stock: {product.stock}
+                        </p>
+
+                        {product.sellerBusinessName && (
+                          <p className="mt-1 text-sm font-medium text-gray-600">
+                            Seller: {product.sellerBusinessName}
+                          </p>
+                        )}
+
+                        {product.isDefault && (
+                          <p className="mt-1 text-xs font-semibold text-blue-700">
+                            Default product
+                          </p>
+                        )}
+                      </div>
+
+                      <p className="font-bold text-gray-900">
+                        {formatCurrency(product.price)}
                       </p>
-                    )}
+                    </div>
+
+                    <p className="mt-3 text-gray-600">
+                      {product.description}
+                    </p>
+
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(product)}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
+                      >
+                        Edit
+                      </button>
+
+                      {!product.isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(product.id)}
+                          className="rounded-lg border border-red-300 px-4 py-2 text-red-600"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  <p className="font-bold text-gray-900">
-                   {formatCurrency(product.price)}
-                  </p>
-                </div>
-
-                <p className="mt-3 text-gray-600">{product.description}</p>
-
-                <div className="mt-4 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(product)}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
-                  >
-                    Edit
-                  </button>
-
-                  {!product.isDefault && (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(product.id)}
-                      className="rounded-lg border border-red-300 px-4 py-2 text-red-600"
-                    >
-                      Delete
-                    </button>
-                  )}
                 </div>
               </div>
             ))}
