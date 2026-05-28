@@ -110,12 +110,36 @@ export default function OrderHistoryContent() {
               <p className="mt-1 text-gray-600">{order.createdAt}</p>
 
               <p className="mt-1 font-semibold text-gray-900">
-                Status: {order.status || "Pending Payment"}
+                Order Status: {order.status || "Pending Payment"}
               </p>
 
               <p className="mt-1 text-gray-600">
-                Payment: {order.paymentMethod || "Not specified"}
+                Payment Method: {order.paymentMethod || "Not specified"}
               </p>
+
+              {order.payment && (
+                <div className="mt-3 rounded-xl bg-yellow-50 p-4 text-gray-700">
+                  <p className="font-semibold text-gray-900">
+                    Payment and Escrow
+                  </p>
+
+                  <p className="mt-1">
+                    Payment Status: {order.payment.status || "Pending"}
+                  </p>
+
+                  <p>Escrow Status: {order.payment.escrowStatus || "Held"}</p>
+
+                  {order.payment.reference && (
+                    <p>Reference: {order.payment.reference}</p>
+                  )}
+
+                  {order.payment.confirmedAt && (
+                    <p>Confirmed At: {order.payment.confirmedAt}</p>
+                  )}
+
+                  {order.payment.note && <p>Note: {order.payment.note}</p>}
+                </div>
+              )}
 
               {order.delivery && (
                 <div className="mt-3 rounded-xl bg-gray-50 p-4 text-gray-700">
@@ -173,7 +197,7 @@ export default function OrderHistoryContent() {
             {order.items.map((item) => (
               <div
                 key={`${order.id}-${item.productId}`}
-                className="flex items-center justify-between"
+                className="flex items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-4">
                   <ProductVisual image={item.image} alt={item.name} size="small" />
@@ -181,6 +205,12 @@ export default function OrderHistoryContent() {
                   <div>
                     <p className="font-semibold text-gray-900">{item.name}</p>
                     <p className="text-gray-600">Quantity: {item.quantity}</p>
+
+                    {item.sellerBusinessName && (
+                      <p className="text-sm text-gray-500">
+                        Seller: {item.sellerBusinessName}
+                      </p>
+                    )}
                   </div>
                 </div>
 

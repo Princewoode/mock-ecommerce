@@ -69,8 +69,8 @@ export default function SellerOrderManager() {
           <h2 className="text-2xl font-bold text-gray-900">Seller Orders</h2>
 
           <p className="mt-2 text-gray-600">
-            View orders, commission deductions, and estimated seller payout for
-            your products.
+            View orders, payment status, escrow status, commission deductions,
+            and estimated seller payout.
           </p>
         </div>
 
@@ -134,8 +134,38 @@ export default function SellerOrderManager() {
                   <p className="mt-1 text-gray-600">{order.createdAt}</p>
 
                   <p className="mt-2 inline-block rounded-full bg-gray-100 px-3 py-1 text-sm font-semibold text-gray-700">
-                    Status: {order.status}
+                    Order Status: {order.status}
                   </p>
+
+                  <div className="mt-4 rounded-xl bg-yellow-50 p-4">
+                    <p className="font-semibold text-gray-900">
+                      Payment and Escrow
+                    </p>
+
+                    <p className="mt-2 text-gray-700">
+                      Payment Method: {order.paymentMethod || "Not specified"}
+                    </p>
+
+                    <p className="mt-1 text-gray-700">
+                      Payment Status: {order.payment?.status || "Pending"}
+                    </p>
+
+                    <p className="mt-1 text-gray-700">
+                      Escrow Status: {order.payment?.escrowStatus || "Held"}
+                    </p>
+
+                    {order.payment?.reference && (
+                      <p className="mt-1 text-gray-700">
+                        Reference: {order.payment.reference}
+                      </p>
+                    )}
+
+                    {order.payment?.confirmedAt && (
+                      <p className="mt-1 text-gray-700">
+                        Confirmed At: {order.payment.confirmedAt}
+                      </p>
+                    )}
+                  </div>
 
                   <div className="mt-4 rounded-xl bg-gray-50 p-4">
                     <p className="font-semibold text-gray-900">
@@ -152,10 +182,6 @@ export default function SellerOrderManager() {
 
                     <p className="mt-1 text-gray-600">
                       Address / Landmark: {order.customer.shippingAddress}
-                    </p>
-
-                    <p className="mt-1 text-gray-600">
-                      Payment: {order.paymentMethod || "Not specified"}
                     </p>
                   </div>
 
@@ -201,8 +227,8 @@ export default function SellerOrderManager() {
                   </p>
 
                   <p className="mt-4 text-sm text-gray-500">
-                    Admin controls official order status and courier assignment
-                    in this phase.
+                    Admin controls official order status, payment confirmation,
+                    escrow release, and courier assignment in this phase.
                   </p>
                 </div>
               </div>
@@ -239,8 +265,7 @@ export default function SellerOrderManager() {
 
                     <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
                       <p className="text-gray-600">
-                        Commission Rate:{" "}
-                        {item.platformCommissionRate || 0}%
+                        Commission Rate: {item.platformCommissionRate || 0}%
                       </p>
 
                       <p className="text-gray-600">

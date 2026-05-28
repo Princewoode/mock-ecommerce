@@ -34,6 +34,12 @@ type DatabaseOrder = {
   delivery_city: string | null;
   delivery_phone: string | null;
   delivery_fee: number | string | null;
+  payment_status: string | null;
+  payment_phone: string | null;
+  payment_reference: string | null;
+  payment_note: string | null;
+  payment_confirmed_at: string | null;
+  escrow_status: string | null;
   courier_name: string | null;
   courier_phone: string | null;
   tracking_code: string | null;
@@ -86,6 +92,16 @@ function mapSellerOrder(order: DatabaseOrder, sellerId: string): Order | null {
     createdAt: new Date(order.created_at).toLocaleString(),
     status: order.status,
     paymentMethod: order.payment_method || "Not specified",
+    payment: {
+      status: order.payment_status || "Pending",
+      phone: order.payment_phone || "",
+      reference: order.payment_reference || "",
+      note: order.payment_note || "",
+      confirmedAt: order.payment_confirmed_at
+        ? new Date(order.payment_confirmed_at).toLocaleString()
+        : "",
+      escrowStatus: order.escrow_status || "Held",
+    },
     customer: {
       fullName: order.customer_name,
       email: order.customer_email,
