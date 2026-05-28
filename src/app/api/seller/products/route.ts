@@ -29,6 +29,8 @@ type SupabaseProductRow = {
   is_default: boolean;
   seller_id: string | null;
   seller_business_name: string | null;
+  product_status: string | null;
+  admin_product_note: string | null;
 };
 
 async function getVerifiedSeller(request: NextRequest) {
@@ -66,6 +68,8 @@ function mapProduct(product: SupabaseProductRow) {
     stock: product.stock,
     sellerId: product.seller_id || undefined,
     sellerBusinessName: product.seller_business_name || undefined,
+    productStatus: product.product_status || "Pending Review",
+    adminProductNote: product.admin_product_note || "",
     isDefault: product.is_default,
   };
 }
@@ -166,6 +170,9 @@ export async function POST(request: NextRequest) {
         seller_id: seller.id,
         seller_business_name: seller.business_name,
         is_default: false,
+        product_status: "Pending Review",
+        admin_product_note:
+          "New seller product submitted for admin review.",
       })
       .select("*")
       .single();
@@ -175,7 +182,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Seller product created successfully.",
+      message:
+        "Seller product submitted successfully. It will appear publicly after admin approval.",
       product: mapProduct(data as SupabaseProductRow),
     });
   } catch (error) {
@@ -218,6 +226,9 @@ export async function PUT(request: NextRequest) {
       .update({
         ...validation.product,
         seller_business_name: seller.business_name,
+        product_status: "Pending Review",
+        admin_product_note:
+          "Seller updated this product. Pending admin re-approval.",
       })
       .eq("id", productId)
       .eq("seller_id", seller.id)
@@ -229,7 +240,8 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({
-      message: "Seller product updated successfully.",
+      message:
+        "Seller product updated successfully. It will appear publicly after admin approval.",
       product: mapProduct(data as SupabaseProductRow),
     });
   } catch (error) {

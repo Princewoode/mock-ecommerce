@@ -12,6 +12,8 @@ type ProductPayload = {
   price: number;
   image: string;
   stock: number;
+  productStatus?: string;
+  adminProductNote?: string;
 };
 
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
@@ -25,7 +27,17 @@ function getAdminApiPassword() {
 }
 
 async function handleResponse(response: Response) {
-  const result = await response.json();
+  const text = await response.text();
+
+  let result;
+
+  try {
+    result = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `Server returned a non-JSON response. Check admin product API route. Status: ${response.status}`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(result.message || "Admin product request failed.");

@@ -9,6 +9,8 @@ type ProductPayload = {
   price?: number | string;
   image?: string;
   stock?: number | string;
+  productStatus?: string;
+  adminProductNote?: string;
 };
 
 type SupabaseProductRow = {
@@ -20,7 +22,18 @@ type SupabaseProductRow = {
   image_url: string;
   stock: number;
   is_default: boolean;
+  seller_id: string | null;
+  seller_business_name: string | null;
+  product_status: string | null;
+  admin_product_note: string | null;
 };
+
+const validProductStatuses = [
+  "Pending Review",
+  "Approved",
+  "Rejected",
+  "Suspended",
+];
 
 function verifyAdminRequest(request: NextRequest) {
   const adminPassword = process.env.ADMIN_API_PASSWORD;
@@ -38,6 +51,10 @@ function mapProduct(row: SupabaseProductRow) {
     price: Number(row.price),
     image: row.image_url,
     stock: row.stock,
+    sellerId: row.seller_id || undefined,
+    sellerBusinessName: row.seller_business_name || undefined,
+    productStatus: row.product_status || "Approved",
+    adminProductNote: row.admin_product_note || "",
     isDefault: row.is_default,
   };
 }
@@ -49,6 +66,11 @@ function validateProductPayload(payload: ProductPayload) {
   const image = String(payload.image || "").trim();
   const price = Number(payload.price);
   const stock = Number(payload.stock);
+  const productStatus = validProductStatuses.includes(
+    String(payload.productStatus || "")
+  )
+    ? String(payload.productStatus)
+    : "Approved";
 
   if (!name || !category || !description || !image) {
     return {
@@ -84,6 +106,8 @@ function validateProductPayload(payload: ProductPayload) {
       price,
       image_url: image,
       stock,
+      product_status: productStatus,
+      admin_product_note: String(payload.adminProductNote || "").trim(),
     },
   };
 }
@@ -99,7 +123,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabaseAdmin
     .from("products")
     .select("*")
-    .order("id", { ascending: true });
+    .order("id", { ascending: false });
 
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
@@ -119,7 +143,10 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = (await request.json()) as ProductPayload;
-  const validation = validateProductPayload(payload);
+  const validation = validateProductPayload({
+    ...payload,
+    productStatus: payload.productStatus || "Approved",
+  });
 
   if (!validation.valid || !validation.product) {
     return NextResponse.json(

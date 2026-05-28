@@ -12,6 +12,13 @@ import {
 import { formatCurrency } from "@/utils/currency";
 import { uploadProductImage } from "@/utils/imageUploadService";
 
+const productStatuses = [
+  "Pending Review",
+  "Approved",
+  "Rejected",
+  "Suspended",
+];
+
 export default function AdminProductManager() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -22,6 +29,8 @@ export default function AdminProductManager() {
   const [price, setPrice] = useState("");
   const [image, setImage] = useState("");
   const [stock, setStock] = useState("");
+  const [productStatus, setProductStatus] = useState("Approved");
+  const [adminProductNote, setAdminProductNote] = useState("");
 
   const [formError, setFormError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -59,6 +68,8 @@ export default function AdminProductManager() {
     setPrice("");
     setImage("");
     setStock("");
+    setProductStatus("Approved");
+    setAdminProductNote("");
     setFormError("");
   }
 
@@ -133,6 +144,8 @@ export default function AdminProductManager() {
       price: Number(price),
       image,
       stock: Number(stock),
+      productStatus,
+      adminProductNote,
     };
 
     try {
@@ -166,6 +179,8 @@ export default function AdminProductManager() {
     setPrice(product.price.toString());
     setImage(product.image);
     setStock(product.stock.toString());
+    setProductStatus(product.productStatus || "Approved");
+    setAdminProductNote(product.adminProductNote || "");
     setFormError("");
     setStatusMessage("");
   }
@@ -205,8 +220,8 @@ export default function AdminProductManager() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Manage marketplace products directly in Supabase. Use real product
-            images for buyer trust.
+            Manage marketplace products directly in Supabase. Seller products
+            should be reviewed before appearing publicly.
           </p>
         </div>
 
@@ -331,6 +346,44 @@ export default function AdminProductManager() {
           />
         </div>
 
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Product Approval Status
+            </label>
+
+            <select
+              value={productStatus}
+              onChange={(event) => setProductStatus(event.target.value)}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            >
+              {productStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Only Approved products appear publicly on the marketplace.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Admin Product Note
+            </label>
+
+            <textarea
+              value={adminProductNote}
+              onChange={(event) => setAdminProductNote(event.target.value)}
+              placeholder="Example: Image unclear, ask seller to replace."
+              rows={4}
+              className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            />
+          </div>
+        </div>
+
         <div className="flex gap-4">
           <button
             type="submit"
@@ -355,7 +408,7 @@ export default function AdminProductManager() {
         <h2 className="text-2xl font-bold text-gray-900">Database Products</h2>
 
         <p className="mt-2 text-gray-600">
-          These products are loaded from Supabase.
+          Review platform and seller products before public marketplace display.
         </p>
 
         {isLoading ? (
@@ -400,6 +453,16 @@ export default function AdminProductManager() {
                             Default product
                           </p>
                         )}
+
+                        <p className="mt-1 text-sm font-semibold text-gray-700">
+                          Status: {product.productStatus || "Approved"}
+                        </p>
+
+                        {product.adminProductNote && (
+                          <p className="mt-1 text-sm text-gray-500">
+                            Admin note: {product.adminProductNote}
+                          </p>
+                        )}
                       </div>
 
                       <p className="font-bold text-gray-900">
@@ -417,7 +480,7 @@ export default function AdminProductManager() {
                         onClick={() => handleEdit(product)}
                         className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
                       >
-                        Edit
+                        Edit / Review
                       </button>
 
                       {!product.isDefault && (

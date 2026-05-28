@@ -12,12 +12,15 @@ type SupabaseProductRow = {
   is_default: boolean;
   seller_id: string | null;
   seller_business_name: string | null;
+  product_status: "Pending Review" | "Approved" | "Rejected" | "Suspended" | null;
+  admin_product_note: string | null;
 };
 
 export async function getSupabaseProducts(): Promise<StoreProduct[]> {
   const { data, error } = await supabase
     .from("products")
     .select("*")
+    .or("product_status.eq.Approved,product_status.is.null")
     .order("id", { ascending: true });
 
   if (error) {
@@ -36,5 +39,7 @@ export async function getSupabaseProducts(): Promise<StoreProduct[]> {
     stock: product.stock,
     sellerId: product.seller_id || undefined,
     sellerBusinessName: product.seller_business_name || undefined,
+    productStatus: product.product_status || "Approved",
+    adminProductNote: product.admin_product_note || "",
   }));
 }

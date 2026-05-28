@@ -8,6 +8,8 @@ export type StoreProduct = {
   stock: number;
   sellerId?: string;
   sellerBusinessName?: string;
+  productStatus?: "Pending Review" | "Approved" | "Rejected" | "Suspended";
+  adminProductNote?: string;
 };
 
 export type CartItem = {
