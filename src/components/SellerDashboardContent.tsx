@@ -2,7 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import ProductVisual from "@/components/ProductVisual";
 import { formatCurrency } from "@/utils/currency";
+import { uploadProductImage } from "@/utils/imageUploadService";
 import {
   createSellerProduct,
   deleteSellerProduct,
@@ -24,6 +26,7 @@ export default function SellerDashboardContent() {
 
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [canManageProducts, setCanManageProducts] = useState(false);
 
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function SellerDashboardContent() {
       !image.trim() ||
       !stock.trim()
     ) {
-      return "Please fill in all product fields.";
+      return "Please fill in all product fields and upload or enter an image.";
     }
 
     const numericPrice = Number(price);
@@ -89,6 +92,28 @@ export default function SellerDashboardContent() {
     }
 
     return "";
+  }
+
+  async function handleImageUpload(file: File | null) {
+    if (!file) {
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      setMessage("");
+
+      const imageUrl = await uploadProductImage(file);
+
+      setImage(imageUrl);
+      setMessage("Image uploaded successfully.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Image upload failed."
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -147,6 +172,7 @@ export default function SellerDashboardContent() {
   async function handleDelete(productId: number) {
     try {
       const result = await deleteSellerProduct(productId);
+
       setMessage(result.message);
       await loadProducts();
       window.dispatchEvent(new Event("productsUpdated"));
@@ -201,7 +227,7 @@ export default function SellerDashboardContent() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Add products to the Ghana marketplace. Keep prices in Ghana Cedis.
+            Upload real product photos and keep prices in Ghana Cedis.
           </p>
         </div>
 
@@ -283,14 +309,37 @@ export default function SellerDashboardContent() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Image Path or Emoji
+            Product Image
           </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) =>
+              handleImageUpload(event.target.files?.[0] || null)
+            }
+            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+          />
+
+          <p className="mt-2 text-sm text-gray-500">
+            Upload a clear product photo. Maximum size: 5MB.
+          </p>
+
+          {isUploadingImage && (
+            <p className="mt-2 text-sm text-gray-600">Uploading image...</p>
+          )}
+
+          {image && (
+            <div className="mt-4">
+              <ProductVisual image={image} alt={name || "Product image"} />
+            </div>
+          )}
 
           <input
             value={image}
             onChange={(event) => setImage(event.target.value)}
-            placeholder="Example: 👜 or /products/bag.jpg"
-            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+            placeholder="Or paste image URL / emoji"
+            className="mt-3 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
         </div>
 
@@ -318,7 +367,7 @@ export default function SellerDashboardContent() {
         <h2 className="text-2xl font-bold text-gray-900">My Products</h2>
 
         <p className="mt-2 text-gray-600">
-          These are products listed under your verified seller account.
+          These products are listed under your verified seller account.
         </p>
 
         {products.length === 0 ? (
@@ -332,42 +381,54 @@ export default function SellerDashboardContent() {
                 key={product.id}
                 className="rounded-xl border border-gray-200 p-4"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-semibold text-gray-900">
-                      {product.name}
+                <div className="flex gap-4">
+                  <ProductVisual
+                    image={product.image}
+                    alt={product.name}
+                    size="small"
+                  />
+
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {product.name}
+                        </p>
+
+                        <p className="text-gray-600">{product.category}</p>
+
+                        <p className="text-sm text-gray-500">
+                          Stock: {product.stock}
+                        </p>
+                      </div>
+
+                      <p className="font-bold text-gray-900">
+                        {formatCurrency(product.price)}
+                      </p>
+                    </div>
+
+                    <p className="mt-3 text-gray-600">
+                      {product.description}
                     </p>
 
-                    <p className="text-gray-600">{product.category}</p>
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(product)}
+                        className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
+                      >
+                        Edit
+                      </button>
 
-                    <p className="text-sm text-gray-500">
-                      Stock: {product.stock}
-                    </p>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(product.id)}
+                        className="rounded-lg border border-red-300 px-4 py-2 text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-
-                  <p className="font-bold text-gray-900">
-                    {formatCurrency(product.price)}
-                  </p>
-                </div>
-
-                <p className="mt-3 text-gray-600">{product.description}</p>
-
-                <div className="mt-4 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(product)}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-gray-900"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(product.id)}
-                    className="rounded-lg border border-red-300 px-4 py-2 text-red-600"
-                  >
-                    Delete
-                  </button>
                 </div>
               </div>
             ))}

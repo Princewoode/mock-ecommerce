@@ -1,45 +1,60 @@
-import Image from "next/image";
-
 type ProductVisualProps = {
-  image: string;
+  image?: string;
   alt: string;
   size?: "small" | "medium" | "large";
 };
+
+const sizeClasses = {
+  small: "h-16 w-16 text-3xl",
+  medium: "h-48 w-full text-6xl",
+  large: "h-80 w-full text-7xl",
+};
+
+function isImageUrl(image: string) {
+  return (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("/") ||
+    image.startsWith("data:image")
+  );
+}
 
 export default function ProductVisual({
   image,
   alt,
   size = "medium",
 }: ProductVisualProps) {
-  const isImagePath = image.startsWith("/") || image.startsWith("http");
+  const visualSize = sizeClasses[size];
 
-  const sizeClasses = {
-    small: "h-14 w-14 text-2xl",
-    medium: "h-36 w-full text-6xl",
-    large: "h-64 w-full text-7xl",
-  };
-
-  if (!isImagePath) {
+  if (!image) {
     return (
       <div
-        className={`flex items-center justify-center rounded-2xl bg-gray-100 ${sizeClasses[size]}`}
+        className={`${visualSize} flex items-center justify-center rounded-xl bg-gray-100 text-gray-400`}
       >
-        {image}
+        📦
+      </div>
+    );
+  }
+
+  if (isImageUrl(image)) {
+    return (
+      <div
+        className={`${visualSize} overflow-hidden rounded-xl bg-gray-100`}
+      >
+        <img
+          src={image}
+          alt={alt}
+          className="h-full w-full object-cover"
+        />
       </div>
     );
   }
 
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-gray-100 ${sizeClasses[size]}`}
+      className={`${visualSize} flex items-center justify-center rounded-xl bg-gray-100`}
     >
-      <Image
-        src={image}
-        alt={alt}
-        fill
-        className="object-cover"
-        sizes="(max-width: 768px) 100vw, 400px"
-      />
+      {image}
     </div>
   );
 }
