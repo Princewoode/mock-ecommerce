@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/serverAuth";
+import { createManyNotifications } from "@/lib/notificationService";
 import { Order } from "@/types/models";
 
 type DatabaseOrderItem = {
@@ -117,6 +118,16 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
   };
 }
 
+function getUniqueSellerIds(orderItems: DatabaseOrderItem[]) {
+  return Array.from(
+    new Set(
+      orderItems
+        .map((item) => item.seller_id)
+        .filter((sellerId): sellerId is string => Boolean(sellerId))
+    )
+  );
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get("email");
@@ -180,19 +191,22 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const { data: order, error: orderError } = await supabaseAdmin
+  const { data: orderData, error: orderError } = await supabaseAdmin
     .from("orders")
-    .select("id, customer_id, status")
+    .select("*, order_items(*)")
     .eq("id", orderId)
     .eq("customer_id", userId)
     .single();
 
-  if (orderError || !order) {
+  if (orderError || !orderData) {
     return NextResponse.json(
       { message: "Order not found for this customer." },
       { status: 404 }
     );
   }
+
+  const order = orderData as DatabaseOrder;
+  const sellerIds = getUniqueSellerIds(order.order_items);
 
   if (action === "confirm_delivery") {
     if (order.status !== "Delivered") {
@@ -218,6 +232,24 @@ export async function PUT(request: NextRequest) {
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    await createManyNotifications([
+      {
+        audience: "admin",
+        title: "Customer confirmed delivery",
+        message: `${order.customer_name} confirmed delivery for order ${order.id}. Escrow can now be reviewed for release.`,
+        type: "customer_delivery_confirmed",
+        relatedOrderId: order.id,
+      },
+      ...sellerIds.map((sellerId) => ({
+        audience: "seller" as const,
+        sellerId,
+        title: "Buyer confirmed delivery",
+        message: `The buyer confirmed delivery for order ${order.id}. Seller payout may now proceed after admin review.`,
+        type: "seller_delivery_confirmed",
+        relatedOrderId: order.id,
+      })),
+    ]);
 
     return NextResponse.json({
       message: "Delivery confirmed successfully. Thank you.",
@@ -249,6 +281,24 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
+    await createManyNotifications([
+      {
+        audience: "admin",
+        title: "Customer requested refund",
+        message: `${order.customer_name} requested a refund for order ${order.id}. Reason: ${reason}`,
+        type: "refund_requested",
+        relatedOrderId: order.id,
+      },
+      ...sellerIds.map((sellerId) => ({
+        audience: "seller" as const,
+        sellerId,
+        title: "Refund requested on order",
+        message: `A customer requested a refund for order ${order.id}. Admin review is required before payout decisions.`,
+        type: "seller_refund_requested",
+        relatedOrderId: order.id,
+      })),
+    ]);
+
     return NextResponse.json({
       message: "Refund request submitted successfully.",
     });
@@ -278,6 +328,24 @@ export async function PUT(request: NextRequest) {
     if (error) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
+
+    await createManyNotifications([
+      {
+        audience: "admin",
+        title: "Customer opened dispute",
+        message: `${order.customer_name} opened a dispute for order ${order.id}. Reason: ${reason}`,
+        type: "dispute_opened",
+        relatedOrderId: order.id,
+      },
+      ...sellerIds.map((sellerId) => ({
+        audience: "seller" as const,
+        sellerId,
+        title: "Dispute opened on order",
+        message: `A customer opened a dispute for order ${order.id}. Admin review is required before payout decisions.`,
+        type: "seller_dispute_opened",
+        relatedOrderId: order.id,
+      })),
+    ]);
 
     return NextResponse.json({
       message: "Dispute opened successfully.",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/serverAuth";
+import { createNotification } from "@/lib/notificationService";
 
 type SellerPayload = {
   businessName?: string;
@@ -125,6 +126,13 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
+
+  await createNotification({
+    audience: "admin",
+    title: "New seller application",
+    message: `${businessName} from ${city}, ${region} has submitted a seller application for review.`,
+    type: "seller_application_submitted",
+  });
 
   return NextResponse.json({
     message:

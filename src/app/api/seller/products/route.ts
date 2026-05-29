@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/serverAuth";
+import { createNotification } from "@/lib/notificationService";
 
 type ProductPayload = {
   id?: number;
@@ -181,10 +182,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
+    const product = data as SupabaseProductRow;
+
+    await createNotification({
+      audience: "admin",
+      title: "New product pending review",
+      message: `${seller.business_name} submitted "${product.name}" for product approval.`,
+      type: "seller_product_submitted",
+      relatedProductId: product.id,
+    });
+
     return NextResponse.json({
       message:
         "Seller product submitted successfully. It will appear publicly after admin approval.",
-      product: mapProduct(data as SupabaseProductRow),
+      product: mapProduct(product),
     });
   } catch (error) {
     return NextResponse.json(
@@ -239,10 +250,20 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 500 });
     }
 
+    const product = data as SupabaseProductRow;
+
+    await createNotification({
+      audience: "admin",
+      title: "Product edit pending review",
+      message: `${seller.business_name} edited "${product.name}". Admin re-approval is required before it appears publicly.`,
+      type: "seller_product_edited",
+      relatedProductId: product.id,
+    });
+
     return NextResponse.json({
       message:
         "Seller product updated successfully. It will appear publicly after admin approval.",
-      product: mapProduct(data as SupabaseProductRow),
+      product: mapProduct(product),
     });
   } catch (error) {
     return NextResponse.json(
