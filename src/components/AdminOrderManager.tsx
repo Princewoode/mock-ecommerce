@@ -22,17 +22,27 @@ const paymentStatuses = [
 
 const escrowStatuses = ["Held", "Released", "Refunded", "Disputed"];
 
+const refundStatuses = ["None", "Requested", "Approved", "Rejected", "Completed"];
+
+const disputeStatuses = ["None", "Open", "Under Review", "Resolved", "Rejected"];
+
 type OrderDraft = {
   status: string;
   courierName: string;
   courierPhone: string;
   trackingCode: string;
   adminNote: string;
+
   paymentStatus: string;
   paymentPhone: string;
   paymentReference: string;
   paymentNote: string;
   escrowStatus: string;
+
+  refundStatus: string;
+  refundReason: string;
+  disputeStatus: string;
+  disputeReason: string;
 };
 
 export default function AdminOrderManager() {
@@ -62,11 +72,17 @@ export default function AdminOrderManager() {
           courierPhone: order.fulfillment?.courierPhone || "",
           trackingCode: order.fulfillment?.trackingCode || "",
           adminNote: order.fulfillment?.adminNote || "",
+
           paymentStatus: order.payment?.status || "Pending",
           paymentPhone: order.payment?.phone || "",
           paymentReference: order.payment?.reference || "",
           paymentNote: order.payment?.note || "",
           escrowStatus: order.payment?.escrowStatus || "Held",
+
+          refundStatus: order.customerAction?.refundStatus || "None",
+          refundReason: order.customerAction?.refundReason || "",
+          disputeStatus: order.customerAction?.disputeStatus || "None",
+          disputeReason: order.customerAction?.disputeReason || "",
         };
       });
 
@@ -108,6 +124,51 @@ export default function AdminOrderManager() {
     }));
   }
 
+  function approveRefundQuick(orderId: string) {
+    setDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [orderId]: {
+        ...currentDrafts[orderId],
+        refundStatus: "Approved",
+        disputeStatus: currentDrafts[orderId]?.disputeStatus || "None",
+        paymentStatus: "Refunded",
+        escrowStatus: "Refunded",
+        status: "Refunded",
+        paymentNote:
+          currentDrafts[orderId]?.paymentNote ||
+          "Refund approved by admin. Escrow marked as refunded.",
+      },
+    }));
+  }
+
+  function rejectRefundQuick(orderId: string) {
+    setDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [orderId]: {
+        ...currentDrafts[orderId],
+        refundStatus: "Rejected",
+        escrowStatus: "Held",
+        paymentNote:
+          currentDrafts[orderId]?.paymentNote ||
+          "Refund rejected after admin review.",
+      },
+    }));
+  }
+
+  function resolveDisputeQuick(orderId: string) {
+    setDrafts((currentDrafts) => ({
+      ...currentDrafts,
+      [orderId]: {
+        ...currentDrafts[orderId],
+        disputeStatus: "Resolved",
+        escrowStatus: "Held",
+        paymentNote:
+          currentDrafts[orderId]?.paymentNote ||
+          "Dispute resolved after admin review.",
+      },
+    }));
+  }
+
   async function handleSaveOrder(orderId: string) {
     const draft = drafts[orderId];
 
@@ -124,14 +185,20 @@ export default function AdminOrderManager() {
         courierPhone: draft.courierPhone,
         trackingCode: draft.trackingCode,
         adminNote: draft.adminNote,
+
         paymentStatus: draft.paymentStatus,
         paymentPhone: draft.paymentPhone,
         paymentReference: draft.paymentReference,
         paymentNote: draft.paymentNote,
         escrowStatus: draft.escrowStatus,
+
+        refundStatus: draft.refundStatus,
+        refundReason: draft.refundReason,
+        disputeStatus: draft.disputeStatus,
+        disputeReason: draft.disputeReason,
       });
 
-      setMessage("Order payment and fulfilment details updated successfully.");
+      setMessage("Order review details updated successfully.");
       await loadOrders();
     } catch (error) {
       setMessage(
@@ -195,8 +262,8 @@ export default function AdminOrderManager() {
           </h2>
 
           <p className="mt-2 text-gray-600">
-            Manage Ghana payments, escrow, delivery workflow, and courier
-            details.
+            Manage Ghana payments, escrow, delivery workflow, refunds, and
+            disputes.
           </p>
         </div>
       </div>
@@ -210,6 +277,12 @@ export default function AdminOrderManager() {
       <div className="mt-6 space-y-6">
         {orders.map((order) => {
           const draft = drafts[order.id];
+          const hasRefundRequest =
+            order.customerAction?.refundStatus &&
+            order.customerAction.refundStatus !== "None";
+          const hasDispute =
+            order.customerAction?.disputeStatus &&
+            order.customerAction.disputeStatus !== "None";
 
           return (
             <div
@@ -257,8 +330,7 @@ export default function AdminOrderManager() {
                       </p>
 
                       <p className="mt-1 text-gray-700">
-                        MoMo / Payment Phone:{" "}
-                        {order.payment.phone || "Not provided"}
+                        Payment Phone: {order.payment.phone || "Not provided"}
                       </p>
 
                       <p className="mt-1 text-gray-700">
@@ -272,6 +344,53 @@ export default function AdminOrderManager() {
                       {order.payment.confirmedAt && (
                         <p className="mt-1 text-gray-700">
                           Confirmed At: {order.payment.confirmedAt}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {order.customerAction && (
+                    <div
+                      className={`mt-4 rounded-xl p-4 ${
+                        hasRefundRequest || hasDispute
+                          ? "bg-red-50"
+                          : "bg-blue-50"
+                      }`}
+                    >
+                      <p className="font-semibold text-gray-900">
+                        Buyer Protection Snapshot
+                      </p>
+
+                      {order.customerAction.deliveryConfirmedAt ? (
+                        <p className="mt-2 text-gray-700">
+                          Delivery Confirmed At:{" "}
+                          {order.customerAction.deliveryConfirmedAt}
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-gray-700">
+                          Delivery not yet confirmed by customer.
+                        </p>
+                      )}
+
+                      <p className="mt-1 text-gray-700">
+                        Refund Status:{" "}
+                        {order.customerAction.refundStatus || "None"}
+                      </p>
+
+                      {order.customerAction.refundReason && (
+                        <p className="mt-1 text-gray-700">
+                          Refund Reason: {order.customerAction.refundReason}
+                        </p>
+                      )}
+
+                      <p className="mt-1 text-gray-700">
+                        Dispute Status:{" "}
+                        {order.customerAction.disputeStatus || "None"}
+                      </p>
+
+                      {order.customerAction.disputeReason && (
+                        <p className="mt-1 text-gray-700">
+                          Dispute Reason: {order.customerAction.disputeReason}
                         </p>
                       )}
                     </div>
@@ -426,6 +545,126 @@ export default function AdminOrderManager() {
                           rows={3}
                           className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
                         />
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-red-50 p-4">
+                      <h4 className="font-semibold text-gray-900">
+                        Refund and Dispute Review
+                      </h4>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Refund Status
+                          </label>
+
+                          <select
+                            value={draft.refundStatus}
+                            onChange={(event) =>
+                              updateDraft(
+                                order.id,
+                                "refundStatus",
+                                event.target.value
+                              )
+                            }
+                            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                          >
+                            {refundStatuses.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            Dispute Status
+                          </label>
+
+                          <select
+                            value={draft.disputeStatus}
+                            onChange={(event) =>
+                              updateDraft(
+                                order.id,
+                                "disputeStatus",
+                                event.target.value
+                              )
+                            }
+                            className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                          >
+                            {disputeStatuses.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Refund Reason / Admin Review Note
+                        </label>
+
+                        <textarea
+                          value={draft.refundReason}
+                          onChange={(event) =>
+                            updateDraft(
+                              order.id,
+                              "refundReason",
+                              event.target.value
+                            )
+                          }
+                          rows={3}
+                          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                        />
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Dispute Reason / Admin Review Note
+                        </label>
+
+                        <textarea
+                          value={draft.disputeReason}
+                          onChange={(event) =>
+                            updateDraft(
+                              order.id,
+                              "disputeReason",
+                              event.target.value
+                            )
+                          }
+                          rows={3}
+                          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+                        />
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() => approveRefundQuick(order.id)}
+                          className="rounded-lg bg-black px-4 py-2 text-sm text-white"
+                        >
+                          Approve Refund
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => rejectRefundQuick(order.id)}
+                          className="rounded-lg border border-orange-300 px-4 py-2 text-sm text-orange-700"
+                        >
+                          Reject Refund
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => resolveDisputeQuick(order.id)}
+                          className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-900"
+                        >
+                          Resolve Dispute
+                        </button>
                       </div>
                     </div>
 

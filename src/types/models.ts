@@ -53,6 +53,15 @@ export type Order = {
     confirmedAt?: string;
     escrowStatus?: string;
   };
+  customerAction?: {
+    deliveryConfirmedAt?: string;
+    refundStatus?: string;
+    refundReason?: string;
+    refundRequestedAt?: string;
+    disputeStatus?: string;
+    disputeReason?: string;
+    disputeRequestedAt?: string;
+  };
   customer: {
     fullName: string;
     email: string;

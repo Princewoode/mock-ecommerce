@@ -23,20 +23,32 @@ type DatabaseOrder = {
   customer_name: string;
   customer_email: string;
   shipping_address: string;
+
   delivery_region: string | null;
   delivery_city: string | null;
   delivery_phone: string | null;
   delivery_fee: number | string | null;
+
   payment_status: string | null;
   payment_phone: string | null;
   payment_reference: string | null;
   payment_note: string | null;
   payment_confirmed_at: string | null;
   escrow_status: string | null;
+
+  customer_delivery_confirmed_at: string | null;
+  refund_status: string | null;
+  refund_reason: string | null;
+  refund_requested_at: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  dispute_requested_at: string | null;
+
   courier_name: string | null;
   courier_phone: string | null;
   tracking_code: string | null;
   admin_note: string | null;
+
   status: string;
   payment_method: string | null;
   total: number | string;
@@ -66,6 +78,21 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
         ? new Date(order.payment_confirmed_at).toLocaleString()
         : "",
       escrowStatus: order.escrow_status || "Held",
+    },
+    customerAction: {
+      deliveryConfirmedAt: order.customer_delivery_confirmed_at
+        ? new Date(order.customer_delivery_confirmed_at).toLocaleString()
+        : "",
+      refundStatus: order.refund_status || "None",
+      refundReason: order.refund_reason || "",
+      refundRequestedAt: order.refund_requested_at
+        ? new Date(order.refund_requested_at).toLocaleString()
+        : "",
+      disputeStatus: order.dispute_status || "None",
+      disputeReason: order.dispute_reason || "",
+      disputeRequestedAt: order.dispute_requested_at
+        ? new Date(order.dispute_requested_at).toLocaleString()
+        : "",
     },
     customer: {
       fullName: order.customer_name,
@@ -146,6 +173,11 @@ export async function PUT(request: NextRequest) {
   const paymentNote = String(payload.paymentNote || "");
   const escrowStatus = String(payload.escrowStatus || "Held");
 
+  const refundStatus = String(payload.refundStatus || "None");
+  const refundReason = String(payload.refundReason || "");
+  const disputeStatus = String(payload.disputeStatus || "None");
+  const disputeReason = String(payload.disputeReason || "");
+
   if (!orderId || !status) {
     return NextResponse.json(
       { message: "Order ID and status are required." },
@@ -164,12 +196,18 @@ export async function PUT(request: NextRequest) {
       courier_phone: courierPhone,
       tracking_code: trackingCode,
       admin_note: adminNote,
+
       payment_status: paymentStatus,
       payment_phone: paymentPhone,
       payment_reference: paymentReference,
       payment_note: paymentNote,
       payment_confirmed_at: paymentConfirmedAt,
       escrow_status: escrowStatus,
+
+      refund_status: refundStatus,
+      refund_reason: refundReason,
+      dispute_status: disputeStatus,
+      dispute_reason: disputeReason,
     })
     .eq("id", orderId);
 
@@ -178,7 +216,8 @@ export async function PUT(request: NextRequest) {
   }
 
   return NextResponse.json({
-    message: "Order payment and fulfilment details updated successfully.",
+    message:
+      "Order payment, fulfilment, refund, and dispute details updated successfully.",
   });
 }
 

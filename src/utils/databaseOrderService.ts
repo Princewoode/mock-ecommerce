@@ -75,6 +75,10 @@ export async function updateDatabaseOrderDetails({
   paymentReference,
   paymentNote,
   escrowStatus,
+  refundStatus,
+  refundReason,
+  disputeStatus,
+  disputeReason,
 }: {
   orderId: string;
   status: string;
@@ -87,6 +91,10 @@ export async function updateDatabaseOrderDetails({
   paymentReference?: string;
   paymentNote?: string;
   escrowStatus?: string;
+  refundStatus?: string;
+  refundReason?: string;
+  disputeStatus?: string;
+  disputeReason?: string;
 }) {
   const response = await fetch("/api/admin/orders", {
     method: "PUT",
@@ -106,6 +114,10 @@ export async function updateDatabaseOrderDetails({
       paymentReference,
       paymentNote,
       escrowStatus,
+      refundStatus,
+      refundReason,
+      disputeStatus,
+      disputeReason,
     }),
   });
 
