@@ -40,6 +40,7 @@ export default function Navbar() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/products", label: "Products" },
+    { href: "/categories", label: "Categories" },
     { href: "/cart", label: `Cart (${cartCount})` },
     { href: "/checkout", label: "Checkout" },
     { href: "/orders", label: "Orders" },
