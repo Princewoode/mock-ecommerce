@@ -6,6 +6,7 @@ import AdminOrderManager from "@/components/AdminOrderManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminSellerManager from "@/components/AdminSellerManager";
 import AdminPayoutManager from "@/components/AdminPayoutManager";
+import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_AUTH_KEY = "mockAdminLoggedIn";
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
@@ -113,7 +114,7 @@ export default function ProtectedAdmin() {
           Logout Admin
         </button>
       </div>
-
+<AdminAnalyticsDashboard />
       <AdminProductManager />
 <AdminOrderManager />
 <AdminReviewManager />
