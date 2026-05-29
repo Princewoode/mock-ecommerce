@@ -48,6 +48,20 @@ export async function getUserNotifications(): Promise<AppNotification[]> {
   return result.notifications || [];
 }
 
+export async function getUnreadNotificationCount(): Promise<number> {
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch("/api/notifications/unread-count", {
+    headers: {
+      ...authHeaders,
+    },
+  });
+
+  const result = await handleResponse(response);
+
+  return result.unreadCount || 0;
+}
+
 export async function markNotificationRead(notificationId: string) {
   const authHeaders = await getAuthHeaders();
 

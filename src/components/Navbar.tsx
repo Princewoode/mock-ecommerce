@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import NotificationNavBadge from "@/components/NotificationNavBadge";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { getCartCount } from "@/utils/cartStorage";
 
@@ -12,8 +13,8 @@ export default function Navbar() {
 
   useEffect(() => {
     function updateCartCount() {
-  setCartCount(getCartCount());
-}
+      setCartCount(getCartCount());
+    }
 
     function updateCustomer() {
       const customer = getCurrentCustomer();
@@ -26,11 +27,13 @@ export default function Navbar() {
     window.addEventListener("cartUpdated", updateCartCount);
     window.addEventListener("storage", updateCartCount);
     window.addEventListener("customerUpdated", updateCustomer);
+    window.addEventListener("notificationsUpdated", updateCartCount);
 
     return () => {
       window.removeEventListener("cartUpdated", updateCartCount);
       window.removeEventListener("storage", updateCartCount);
       window.removeEventListener("customerUpdated", updateCustomer);
+      window.removeEventListener("notificationsUpdated", updateCartCount);
     };
   }, []);
 
@@ -40,7 +43,10 @@ export default function Navbar() {
     { href: "/cart", label: `Cart (${cartCount})` },
     { href: "/checkout", label: "Checkout" },
     { href: "/orders", label: "Orders" },
-    { href: "/account", label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account" },
+    {
+      href: "/account",
+      label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account",
+    },
     { href: "/seller/apply", label: "Sell" },
     { href: "/seller/dashboard", label: "Seller Dashboard" },
     { href: "/notifications", label: "Notifications" },
@@ -68,9 +74,10 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-gray-700 hover:text-black"
+                className="flex items-center text-sm font-medium text-gray-700 hover:text-black"
               >
                 {link.label}
+                {link.href === "/notifications" && <NotificationNavBadge />}
               </Link>
             ))}
           </div>
@@ -83,9 +90,10 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-black"
+                className="flex items-center rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-black"
               >
                 {link.label}
+                {link.href === "/notifications" && <NotificationNavBadge />}
               </Link>
             ))}
           </div>

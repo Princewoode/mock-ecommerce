@@ -40,6 +40,7 @@ export default function NotificationCenterContent() {
     try {
       await markNotificationRead(notificationId);
       await loadNotifications();
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (error) {
       setMessage(
         error instanceof Error
