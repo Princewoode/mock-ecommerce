@@ -127,3 +127,17 @@ export type SellerTrustStats = {
     | "Top Trusted Seller"
     | "Needs Review";
 };
+
+export type AppNotification = {
+  id: string;
+  audience: "customer" | "seller" | "admin";
+  userId?: string;
+  sellerId?: string;
+  title: string;
+  message: string;
+  type: string;
+  relatedOrderId?: string;
+  relatedProductId?: number;
+  isRead: boolean;
+  createdAt: string;
+};

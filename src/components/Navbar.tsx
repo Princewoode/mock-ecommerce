@@ -43,6 +43,7 @@ export default function Navbar() {
     { href: "/account", label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account" },
     { href: "/seller/apply", label: "Sell" },
     { href: "/seller/dashboard", label: "Seller Dashboard" },
+    { href: "/notifications", label: "Notifications" },
     { href: "/admin", label: "Admin" },
   ];
 

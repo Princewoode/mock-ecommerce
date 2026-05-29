@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createManyNotifications } from "@/lib/notificationService";
 import { Order } from "@/types/models";
 import { DEFAULT_PLATFORM_COMMISSION_RATE } from "@/utils/commission";
 
@@ -164,6 +165,44 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+
+  const uniqueSellerIds = Array.from(
+    new Set(
+      enrichedOrderItems
+        .map((item) => item.sellerId)
+        .filter((sellerId): sellerId is string => Boolean(sellerId))
+    )
+  );
+
+  await createManyNotifications([
+    ...(createdOrder.customer_id
+      ? [
+          {
+            audience: "customer" as const,
+            userId: createdOrder.customer_id,
+            title: "Order placed successfully",
+            message: `Your order ${createdOrder.id} has been received. Payment and delivery updates will appear in your order history.`,
+            type: "order_created",
+            relatedOrderId: createdOrder.id,
+          },
+        ]
+      : []),
+    {
+      audience: "admin" as const,
+      title: "New marketplace order",
+      message: `A new order ${createdOrder.id} was placed by ${createdOrder.customer_name}.`,
+      type: "order_created",
+      relatedOrderId: createdOrder.id,
+    },
+    ...uniqueSellerIds.map((sellerId) => ({
+      audience: "seller" as const,
+      sellerId,
+      title: "New order for your product",
+      message: `A customer placed an order containing one or more of your products. Order ID: ${createdOrder.id}.`,
+      type: "seller_order_created",
+      relatedOrderId: createdOrder.id,
+    })),
+  ]);
 
   const savedOrder: Order = {
     id: createdOrder.id,
