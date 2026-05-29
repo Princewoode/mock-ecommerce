@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createNotification } from "@/lib/notificationService";
 
 type ProductPayload = {
   id?: number;
@@ -112,6 +113,61 @@ function validateProductPayload(payload: ProductPayload) {
   };
 }
 
+async function notifySellerAboutProductStatus({
+  previousProduct,
+  updatedProduct,
+}: {
+  previousProduct: SupabaseProductRow;
+  updatedProduct: SupabaseProductRow;
+}) {
+  if (!updatedProduct.seller_id) {
+    return;
+  }
+
+  const previousStatus = previousProduct.product_status || "Approved";
+  const nextStatus = updatedProduct.product_status || "Approved";
+
+  if (previousStatus === nextStatus) {
+    return;
+  }
+
+  let title = "Product review updated";
+  let message = `Your product "${updatedProduct.name}" status changed to ${nextStatus}.`;
+
+  if (nextStatus === "Approved") {
+    title = "Product approved";
+    message = `Your product "${updatedProduct.name}" has been approved and is now visible to buyers.`;
+  }
+
+  if (nextStatus === "Rejected") {
+    title = "Product rejected";
+    message = `Your product "${updatedProduct.name}" was rejected. Admin note: ${
+      updatedProduct.admin_product_note || "No note provided."
+    }`;
+  }
+
+  if (nextStatus === "Suspended") {
+    title = "Product suspended";
+    message = `Your product "${updatedProduct.name}" has been suspended. Admin note: ${
+      updatedProduct.admin_product_note || "No note provided."
+    }`;
+  }
+
+  if (nextStatus === "Pending Review") {
+    title = "Product moved to review";
+    message = `Your product "${updatedProduct.name}" is now pending admin review.`;
+  }
+
+  await createNotification({
+    audience: "seller",
+    sellerId: updatedProduct.seller_id,
+    title,
+    message,
+    type: "product_review_status",
+    relatedProductId: updatedProduct.id,
+  });
+}
+
 export async function GET(request: NextRequest) {
   if (!verifyAdminRequest(request)) {
     return NextResponse.json(
@@ -201,6 +257,22 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  const { data: previousProductData, error: previousProductError } =
+    await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .single();
+
+  if (previousProductError || !previousProductData) {
+    return NextResponse.json(
+      { message: previousProductError?.message || "Product not found." },
+      { status: 404 }
+    );
+  }
+
+  const previousProduct = previousProductData as SupabaseProductRow;
+
   const { data, error } = await supabaseAdmin
     .from("products")
     .update(validation.product)
@@ -212,9 +284,16 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
+  const updatedProduct = data as SupabaseProductRow;
+
+  await notifySellerAboutProductStatus({
+    previousProduct,
+    updatedProduct,
+  });
+
   return NextResponse.json({
     message: "Product updated successfully.",
-    product: mapProduct(data as SupabaseProductRow),
+    product: mapProduct(updatedProduct),
   });
 }
 

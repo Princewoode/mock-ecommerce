@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
+import { createManyNotifications } from "@/lib/notificationService";
 type OrderItemRow = {
   id: string;
   order_id: string;
@@ -290,11 +290,67 @@ export async function PUT(request: NextRequest) {
       payout_paid_at: new Date().toISOString(),
     })
     .in("id", itemIds);
+  const { data: payoutItems, error: payoutItemFetchError } = await supabaseAdmin
+    .from("order_items")
+    .select("id, order_id, seller_id, seller_business_name, seller_payout_amount")
+    .in("id", itemIds);
 
+  if (payoutItemFetchError) {
+    return NextResponse.json(
+      { message: payoutItemFetchError.message },
+      { status: 500 }
+    );
+  }
   if (error) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
+  const payoutRows = (payoutItems || []) as {
+    id: string;
+    order_id: string;
+    seller_id: string | null;
+    seller_business_name: string | null;
+    seller_payout_amount: number | string | null;
+  }[];
 
+  const sellerPayoutMap = new Map<
+    string,
+    {
+      sellerName: string;
+      totalPayout: number;
+      orderIds: Set<string>;
+    }
+  >();
+
+  payoutRows.forEach((item) => {
+    if (!item.seller_id) {
+      return;
+    }
+
+    const existing = sellerPayoutMap.get(item.seller_id) || {
+      sellerName: item.seller_business_name || "Seller",
+      totalPayout: 0,
+      orderIds: new Set<string>(),
+    };
+
+    existing.totalPayout += Number(item.seller_payout_amount || 0);
+    existing.orderIds.add(item.order_id);
+
+    sellerPayoutMap.set(item.seller_id, existing);
+  });
+
+  await createManyNotifications(
+    Array.from(sellerPayoutMap.entries()).map(([sellerId, payout]) => ({
+      audience: "seller" as const,
+      sellerId,
+      title: "Seller payout marked as paid",
+      message: `A payout of GH₵${payout.totalPayout.toFixed(
+        2
+      )} has been marked as paid for ${
+        payout.orderIds.size
+      } order(s). Reference: ${payoutReference}.`,
+      type: "seller_payout_paid",
+    }))
+  );
   return NextResponse.json({
     message: "Seller payout marked as paid successfully.",
   });
