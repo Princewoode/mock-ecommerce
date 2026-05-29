@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { createManyNotifications } from "@/lib/notificationService";
 import { Order } from "@/types/models";
 
 type DatabaseOrderItem = {
@@ -53,6 +54,17 @@ type DatabaseOrder = {
   payment_method: string | null;
   total: number | string;
   order_items: DatabaseOrderItem[];
+};
+
+type NotificationInput = {
+  audience: "customer" | "seller" | "admin";
+  userId?: string | null;
+  sellerId?: string | null;
+  title: string;
+  message: string;
+  type?: string;
+  relatedOrderId?: string | null;
+  relatedProductId?: number | null;
 };
 
 function verifyAdminRequest(request: NextRequest) {
@@ -128,6 +140,173 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
   };
 }
 
+function getUniqueSellerIds(orderItems: DatabaseOrderItem[]) {
+  return Array.from(
+    new Set(
+      orderItems
+        .map((item) => item.seller_id)
+        .filter((sellerId): sellerId is string => Boolean(sellerId))
+    )
+  );
+}
+
+function buildOrderUpdateNotifications({
+  previousOrder,
+  nextStatus,
+  nextPaymentStatus,
+  nextEscrowStatus,
+  nextRefundStatus,
+  nextDisputeStatus,
+}: {
+  previousOrder: DatabaseOrder;
+  nextStatus: string;
+  nextPaymentStatus: string;
+  nextEscrowStatus: string;
+  nextRefundStatus: string;
+  nextDisputeStatus: string;
+}) {
+  const notifications: NotificationInput[] = [];
+  const sellerIds = getUniqueSellerIds(previousOrder.order_items);
+
+  function notifyCustomer(title: string, message: string, type: string) {
+    if (!previousOrder.customer_id) {
+      return;
+    }
+
+    notifications.push({
+      audience: "customer",
+      userId: previousOrder.customer_id,
+      title,
+      message,
+      type,
+      relatedOrderId: previousOrder.id,
+    });
+  }
+
+  function notifySellers(title: string, message: string, type: string) {
+    sellerIds.forEach((sellerId) => {
+      notifications.push({
+        audience: "seller",
+        sellerId,
+        title,
+        message,
+        type,
+        relatedOrderId: previousOrder.id,
+      });
+    });
+  }
+
+  if ((previousOrder.payment_status || "Pending") !== nextPaymentStatus) {
+    if (nextPaymentStatus === "Confirmed") {
+      notifyCustomer(
+        "Payment confirmed",
+        `Payment for order ${previousOrder.id} has been confirmed. Your order is now being prepared.`,
+        "payment_confirmed"
+      );
+
+      notifySellers(
+        "Customer payment confirmed",
+        `Payment has been confirmed for order ${previousOrder.id}. Please prepare the seller items when fulfilment begins.`,
+        "seller_payment_confirmed"
+      );
+    }
+
+    if (nextPaymentStatus === "Refunded") {
+      notifyCustomer(
+        "Payment refunded",
+        `Order ${previousOrder.id} has been marked as refunded.`,
+        "payment_refunded"
+      );
+
+      notifySellers(
+        "Order refund processed",
+        `Order ${previousOrder.id} has been marked as refunded. Seller payout may be affected.`,
+        "seller_order_refunded"
+      );
+    }
+  }
+
+  if (previousOrder.status !== nextStatus) {
+    notifyCustomer(
+      "Order status updated",
+      `Order ${previousOrder.id} status changed to ${nextStatus}.`,
+      "order_status_updated"
+    );
+
+    notifySellers(
+      "Seller order status updated",
+      `Order ${previousOrder.id} status changed to ${nextStatus}.`,
+      "seller_order_status_updated"
+    );
+
+    if (nextStatus === "Out for Delivery") {
+      notifyCustomer(
+        "Order is out for delivery",
+        `Order ${previousOrder.id} is out for delivery. Please keep your delivery phone available.`,
+        "order_out_for_delivery"
+      );
+    }
+
+    if (nextStatus === "Delivered") {
+      notifyCustomer(
+        "Order delivered",
+        `Order ${previousOrder.id} has been marked as delivered. Please confirm delivery in your order history if everything is correct.`,
+        "order_delivered"
+      );
+
+      notifySellers(
+        "Order delivered",
+        `Order ${previousOrder.id} has been marked as delivered. Payout eligibility may begin after buyer confirmation/admin review.`,
+        "seller_order_delivered"
+      );
+    }
+  }
+
+  if ((previousOrder.escrow_status || "Held") !== nextEscrowStatus) {
+    notifyCustomer(
+      "Escrow status updated",
+      `Escrow status for order ${previousOrder.id} changed to ${nextEscrowStatus}.`,
+      "escrow_status_updated"
+    );
+
+    notifySellers(
+      "Escrow status updated",
+      `Escrow status for order ${previousOrder.id} changed to ${nextEscrowStatus}.`,
+      "seller_escrow_status_updated"
+    );
+  }
+
+  if ((previousOrder.refund_status || "None") !== nextRefundStatus) {
+    notifyCustomer(
+      "Refund status updated",
+      `Refund status for order ${previousOrder.id} changed to ${nextRefundStatus}.`,
+      "refund_status_updated"
+    );
+
+    notifySellers(
+      "Refund status updated",
+      `Refund status for order ${previousOrder.id} changed to ${nextRefundStatus}.`,
+      "seller_refund_status_updated"
+    );
+  }
+
+  if ((previousOrder.dispute_status || "None") !== nextDisputeStatus) {
+    notifyCustomer(
+      "Dispute status updated",
+      `Dispute status for order ${previousOrder.id} changed to ${nextDisputeStatus}.`,
+      "dispute_status_updated"
+    );
+
+    notifySellers(
+      "Dispute status updated",
+      `Dispute status for order ${previousOrder.id} changed to ${nextDisputeStatus}.`,
+      "seller_dispute_status_updated"
+    );
+  }
+
+  return notifications;
+}
+
 export async function GET(request: NextRequest) {
   if (!verifyAdminRequest(request)) {
     return NextResponse.json(
@@ -185,8 +364,28 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const paymentConfirmedAt =
-    paymentStatus === "Confirmed" ? new Date().toISOString() : null;
+  const { data: previousOrderData, error: previousOrderError } =
+    await supabaseAdmin
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("id", orderId)
+      .single();
+
+  if (previousOrderError || !previousOrderData) {
+    return NextResponse.json(
+      { message: previousOrderError?.message || "Order not found." },
+      { status: 404 }
+    );
+  }
+
+  const previousOrder = previousOrderData as DatabaseOrder;
+
+  const shouldSetConfirmedAt =
+    paymentStatus === "Confirmed" && previousOrder.payment_status !== "Confirmed";
+
+  const paymentConfirmedAt = shouldSetConfirmedAt
+    ? new Date().toISOString()
+    : previousOrder.payment_confirmed_at;
 
   const { error } = await supabaseAdmin
     .from("orders")
@@ -215,9 +414,22 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 
+  const notifications = buildOrderUpdateNotifications({
+    previousOrder,
+    nextStatus: status,
+    nextPaymentStatus: paymentStatus,
+    nextEscrowStatus: escrowStatus,
+    nextRefundStatus: refundStatus,
+    nextDisputeStatus: disputeStatus,
+  });
+
+  if (notifications.length > 0) {
+    await createManyNotifications(notifications);
+  }
+
   return NextResponse.json({
     message:
-      "Order payment, fulfilment, refund, and dispute details updated successfully.",
+      "Order payment, fulfilment, refund, dispute, and notification details updated successfully.",
   });
 }
 
