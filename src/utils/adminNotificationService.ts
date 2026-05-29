@@ -2,6 +2,17 @@ import { AppNotification } from "@/types/models";
 
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
 
+export type AdminUnreadNotificationSummary = {
+  unreadCount: number;
+  latestUnread: {
+    id: string;
+    title: string;
+    message: string;
+    type: string;
+    createdAt: string;
+  }[];
+};
+
 function getAdminApiPassword() {
   if (typeof window === "undefined") {
     return "";
@@ -40,6 +51,16 @@ export async function getAdminNotifications(): Promise<AppNotification[]> {
   const result = await handleResponse(response);
 
   return result.notifications || [];
+}
+
+export async function getAdminUnreadNotificationSummary(): Promise<AdminUnreadNotificationSummary> {
+  const response = await fetch("/api/admin/notifications/unread-count", {
+    headers: {
+      "x-admin-password": getAdminApiPassword(),
+    },
+  });
+
+  return handleResponse(response);
 }
 
 export async function markAdminNotificationRead(notificationId: string) {

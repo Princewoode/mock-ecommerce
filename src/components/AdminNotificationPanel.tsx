@@ -39,6 +39,7 @@ export default function AdminNotificationPanel() {
     try {
       await markAdminNotificationRead(notificationId);
       await loadNotifications();
+      window.dispatchEvent(new Event("adminNotificationsUpdated"));
     } catch (error) {
       setMessage(
         error instanceof Error

@@ -1,5 +1,5 @@
 "use client";
-
+import AdminUnreadNotificationSummary from "@/components/AdminUnreadNotificationSummary";
 import { FormEvent, useEffect, useState } from "react";
 import AdminProductManager from "@/components/AdminProductManager";
 import AdminOrderManager from "@/components/AdminOrderManager";
@@ -115,6 +115,7 @@ export default function ProtectedAdmin() {
           Logout Admin
         </button>
       </div>
+      <AdminUnreadNotificationSummary />
 <AdminAnalyticsDashboard />
 <AdminNotificationPanel />
       <AdminProductManager />
