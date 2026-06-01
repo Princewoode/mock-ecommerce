@@ -5,12 +5,26 @@ export type SellerProduct = StoreProduct & {
   isDefault?: boolean;
 };
 
+type SellerProductPayload = {
+  id?: number;
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+  image: string;
+  stock: number;
+  groupDealEnabled?: boolean;
+  groupPrice?: number;
+  groupMinQuantity?: number;
+  groupDealNote?: string;
+};
+
 async function getAuthHeaders() {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
 
   if (!token) {
-    throw new Error("Please log in before accessing seller tools.");
+    throw new Error("Please log in before managing seller products.");
   }
 
   return {
@@ -27,7 +41,7 @@ async function handleResponse(response: Response) {
     result = JSON.parse(text);
   } catch {
     throw new Error(
-      `Server returned a non-JSON response. Check that /api/seller/products exists and restart the dev server. Status: ${response.status}`
+      `Server returned a non-JSON response. Check seller product API route. Status: ${response.status}`
     );
   }
 
@@ -52,14 +66,7 @@ export async function getSellerProducts(): Promise<SellerProduct[]> {
   return result.products || [];
 }
 
-export async function createSellerProduct(payload: {
-  name: string;
-  category: string;
-  description: string;
-  price: number;
-  image: string;
-  stock: number;
-}) {
+export async function createSellerProduct(payload: SellerProductPayload) {
   const authHeaders = await getAuthHeaders();
 
   const response = await fetch("/api/seller/products", {
@@ -74,15 +81,7 @@ export async function createSellerProduct(payload: {
   return handleResponse(response);
 }
 
-export async function updateSellerProduct(payload: {
-  id: number;
-  name: string;
-  category: string;
-  description: string;
-  price: number;
-  image: string;
-  stock: number;
-}) {
+export async function updateSellerProduct(payload: SellerProductPayload) {
   const authHeaders = await getAuthHeaders();
 
   const response = await fetch("/api/seller/products", {

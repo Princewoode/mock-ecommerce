@@ -14,6 +14,10 @@ type ProductPayload = {
   stock: number;
   productStatus?: string;
   adminProductNote?: string;
+  groupDealEnabled?: boolean;
+  groupPrice?: number;
+  groupMinQuantity?: number;
+  groupDealNote?: string;
 };
 
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";

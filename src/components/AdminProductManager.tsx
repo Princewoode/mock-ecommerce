@@ -36,7 +36,10 @@ export default function AdminProductManager() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-
+const [groupDealEnabled, setGroupDealEnabled] = useState(false);
+const [groupPrice, setGroupPrice] = useState("");
+const [groupMinQuantity, setGroupMinQuantity] = useState("2");
+const [groupDealNote, setGroupDealNote] = useState("");
   useEffect(() => {
     loadProducts();
   }, []);
@@ -71,6 +74,10 @@ export default function AdminProductManager() {
     setProductStatus("Approved");
     setAdminProductNote("");
     setFormError("");
+    setGroupDealEnabled(false);
+setGroupPrice("");
+setGroupMinQuantity("2");
+setGroupDealNote("");
   }
 
   function validateForm() {
@@ -99,8 +106,29 @@ export default function AdminProductManager() {
     ) {
       return "Please enter a valid whole-number stock quantity.";
     }
+if (groupDealEnabled) {
+  const numericGroupPrice = Number(groupPrice);
+  const numericGroupMinQuantity = Number(groupMinQuantity);
+  const numericPrice = Number(price);
 
+  if (Number.isNaN(numericGroupPrice) || numericGroupPrice <= 0) {
+    return "Please enter a valid group deal price.";
+  }
+
+  if (numericGroupPrice >= numericPrice) {
+    return "Group deal price must be lower than the normal product price.";
+  }
+
+  if (
+    Number.isNaN(numericGroupMinQuantity) ||
+    numericGroupMinQuantity < 2 ||
+    !Number.isInteger(numericGroupMinQuantity)
+  ) {
+    return "Group deal minimum quantity must be a whole number of 2 or more.";
+  }
+}
     return "";
+    
   }
 
   async function handleImageUpload(file: File | null) {
@@ -146,6 +174,10 @@ export default function AdminProductManager() {
       stock: Number(stock),
       productStatus,
       adminProductNote,
+      groupDealEnabled,
+groupPrice: groupDealEnabled ? Number(groupPrice) : undefined,
+groupMinQuantity: groupDealEnabled ? Number(groupMinQuantity) : 2,
+groupDealNote: groupDealEnabled ? groupDealNote : "",
     };
 
     try {
@@ -183,6 +215,10 @@ export default function AdminProductManager() {
     setAdminProductNote(product.adminProductNote || "");
     setFormError("");
     setStatusMessage("");
+    setGroupDealEnabled(Boolean(product.groupDealEnabled));
+setGroupPrice(product.groupPrice ? product.groupPrice.toString() : "");
+setGroupMinQuantity((product.groupMinQuantity || 2).toString());
+setGroupDealNote(product.groupDealNote || "");
   }
 
   async function handleDelete(productId: number) {
@@ -345,7 +381,67 @@ export default function AdminProductManager() {
             className="mt-3 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
         </div>
+<div className="rounded-xl bg-orange-50 p-5">
+  <label className="flex items-center gap-3 font-semibold text-gray-900">
+    <input
+      type="checkbox"
+      checked={groupDealEnabled}
+      onChange={(event) => setGroupDealEnabled(event.target.checked)}
+    />
+    Enable Group / Bulk Deal
+  </label>
 
+  <p className="mt-2 text-sm text-gray-600">
+    Use this to create Pinduoduo-style discounted buying for bulk customers,
+    families, friends, resellers, and wholesalers.
+  </p>
+
+  {groupDealEnabled && (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Group Deal Price GH₵
+        </label>
+
+        <input
+          type="number"
+          value={groupPrice}
+          onChange={(event) => setGroupPrice(event.target.value)}
+          placeholder="Example: 90"
+          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Minimum Quantity
+        </label>
+
+        <input
+          type="number"
+          value={groupMinQuantity}
+          onChange={(event) => setGroupMinQuantity(event.target.value)}
+          placeholder="Example: 3"
+          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Group Deal Note
+        </label>
+
+        <input
+          type="text"
+          value={groupDealNote}
+          onChange={(event) => setGroupDealNote(event.target.value)}
+          placeholder="Example: Best for friends, family, or bulk buyers"
+          className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
+        />
+      </div>
+    </div>
+  )}
+</div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -447,7 +543,12 @@ export default function AdminProductManager() {
                             Seller: {product.sellerBusinessName}
                           </p>
                         )}
-
+{product.groupDealEnabled && product.groupPrice && (
+  <p className="mt-2 rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700">
+    Group Deal: {formatCurrency(product.groupPrice)} when buyer orders{" "}
+    {product.groupMinQuantity || 2}+ items
+  </p>
+)}
                         {product.isDefault && (
                           <p className="mt-1 text-xs font-semibold text-blue-700">
                             Default product

@@ -12,6 +12,10 @@ type ProductPayload = {
   stock?: number | string;
   productStatus?: string;
   adminProductNote?: string;
+  groupDealEnabled?: boolean;
+  groupPrice?: number | string;
+  groupMinQuantity?: number | string;
+  groupDealNote?: string;
 };
 
 type SupabaseProductRow = {
@@ -27,6 +31,10 @@ type SupabaseProductRow = {
   seller_business_name: string | null;
   product_status: string | null;
   admin_product_note: string | null;
+  group_deal_enabled: boolean | null;
+  group_price: number | string | null;
+  group_min_quantity: number | null;
+  group_deal_note: string | null;
 };
 
 const validProductStatuses = [
@@ -57,6 +65,10 @@ function mapProduct(row: SupabaseProductRow) {
     productStatus: row.product_status || "Approved",
     adminProductNote: row.admin_product_note || "",
     isDefault: row.is_default,
+    groupDealEnabled: Boolean(row.group_deal_enabled),
+    groupPrice: row.group_price ? Number(row.group_price) : undefined,
+    groupMinQuantity: row.group_min_quantity || 2,
+    groupDealNote: row.group_deal_note || "",
   };
 }
 
@@ -67,11 +79,17 @@ function validateProductPayload(payload: ProductPayload) {
   const image = String(payload.image || "").trim();
   const price = Number(payload.price);
   const stock = Number(payload.stock);
+
   const productStatus = validProductStatuses.includes(
     String(payload.productStatus || "")
   )
     ? String(payload.productStatus)
     : "Approved";
+
+  const groupDealEnabled = Boolean(payload.groupDealEnabled);
+  const groupPrice = Number(payload.groupPrice || 0);
+  const groupMinQuantity = Number(payload.groupMinQuantity || 2);
+  const groupDealNote = String(payload.groupDealNote || "").trim();
 
   if (!name || !category || !description || !image) {
     return {
@@ -97,6 +115,36 @@ function validateProductPayload(payload: ProductPayload) {
     };
   }
 
+  if (groupDealEnabled) {
+    if (Number.isNaN(groupPrice) || groupPrice <= 0) {
+      return {
+        valid: false,
+        message: "Please enter a valid group deal price.",
+        product: null,
+      };
+    }
+
+    if (groupPrice >= price) {
+      return {
+        valid: false,
+        message: "Group deal price must be lower than the normal price.",
+        product: null,
+      };
+    }
+
+    if (
+      Number.isNaN(groupMinQuantity) ||
+      groupMinQuantity < 2 ||
+      !Number.isInteger(groupMinQuantity)
+    ) {
+      return {
+        valid: false,
+        message: "Group minimum quantity must be a whole number of 2 or more.",
+        product: null,
+      };
+    }
+  }
+
   return {
     valid: true,
     message: "",
@@ -109,6 +157,10 @@ function validateProductPayload(payload: ProductPayload) {
       stock,
       product_status: productStatus,
       admin_product_note: String(payload.adminProductNote || "").trim(),
+      group_deal_enabled: groupDealEnabled,
+      group_price: groupDealEnabled ? groupPrice : null,
+      group_min_quantity: groupDealEnabled ? groupMinQuantity : 2,
+      group_deal_note: groupDealEnabled ? groupDealNote : "",
     },
   };
 }
