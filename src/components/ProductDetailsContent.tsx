@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
+import AddGroupDealButton from "@/components/AddGroupDealButton";
 import ProductReviews from "@/components/ProductReviews";
 import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
@@ -134,8 +135,9 @@ export default function ProductDetailsContent({
               </p>
 
               <p className="mt-2 text-sm text-orange-800">
-                Add at least {product.groupMinQuantity || 2} item(s) to your
-                cart to unlock the group deal price at checkout.
+                Click <strong>Add Group Deal</strong> to automatically add{" "}
+                {product.groupMinQuantity || 2} item(s) and unlock the cheaper
+                group price.
               </p>
 
               {product.groupDealNote && (
@@ -145,7 +147,7 @@ export default function ProductDetailsContent({
               )}
 
               <p className="mt-3 text-xs text-orange-700">
-                This is useful for friends buying together, families, traders,
+                Useful for friends buying together, families, traders,
                 resellers, boutiques, and small wholesalers.
               </p>
             </div>
@@ -172,6 +174,14 @@ export default function ProductDetailsContent({
             </Link>
 
             {!isOutOfStock && <AddToCartButton productId={product.id} />}
+
+            {hasGroupDeal && !isOutOfStock && (
+              <AddGroupDealButton
+                productId={product.id}
+                groupMinQuantity={product.groupMinQuantity || 2}
+                stock={product.stock}
+              />
+            )}
 
             {hasGroupDeal && (
               <Link

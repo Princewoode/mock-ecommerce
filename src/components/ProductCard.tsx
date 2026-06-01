@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
+import AddGroupDealButton from "@/components/AddGroupDealButton";
 import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
 import { formatCurrency } from "@/utils/currency";
@@ -37,8 +38,12 @@ export default function ProductCard({
 }: ProductCardProps) {
   const isOutOfStock = stock <= 0;
   const isLowStock = stock > 0 && stock <= 3;
+
   const hasGroupDeal =
-    Boolean(groupDealEnabled) && Number(groupPrice || 0) > 0 && Number(groupPrice) < price;
+    Boolean(groupDealEnabled) &&
+    Number(groupPrice || 0) > 0 &&
+    Number(groupPrice) < price &&
+    groupMinQuantity > 1;
 
   return (
     <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
@@ -134,6 +139,14 @@ export default function ProductCard({
         )}
 
         {id && !isOutOfStock && <AddToCartButton productId={id} />}
+
+        {id && hasGroupDeal && !isOutOfStock && (
+          <AddGroupDealButton
+            productId={id}
+            groupMinQuantity={groupMinQuantity}
+            stock={stock}
+          />
+        )}
 
         {isOutOfStock && (
           <button
