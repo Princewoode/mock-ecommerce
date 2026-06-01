@@ -5,7 +5,7 @@ import Link from "next/link";
 import NotificationNavBadge from "@/components/NotificationNavBadge";
 import { getCurrentCustomer } from "@/utils/authStorage";
 import { getCartCount } from "@/utils/cartStorage";
-
+import WishlistNavBadge from "@/components/WishlistNavBadge";
 export default function Navbar() {
   const [cartCount, setCartCount] = useState(0);
   const [customerName, setCustomerName] = useState("");
@@ -74,31 +74,33 @@ export default function Navbar() {
 
           <div className="hidden items-center gap-6 md:flex">
             {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center text-sm font-medium text-gray-700 hover:text-black"
-              >
-                {link.label}
-                {link.href === "/notifications" && <NotificationNavBadge />}
-              </Link>
-            ))}
+  <Link
+    key={link.href}
+    href={link.href}
+    className="flex items-center text-sm font-medium text-gray-700 hover:text-black"
+  >
+    {link.label}
+    {link.href === "/wishlist" && <WishlistNavBadge />}
+    {link.href === "/notifications" && <NotificationNavBadge />}
+  </Link>
+))}
           </div>
         </div>
 
         {menuOpen && (
           <div className="mt-4 grid gap-3 border-t pt-4 md:hidden">
             {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-black"
-              >
-                {link.label}
-                {link.href === "/notifications" && <NotificationNavBadge />}
-              </Link>
-            ))}
+  <Link
+    key={link.href}
+    href={link.href}
+    onClick={() => setMenuOpen(false)}
+    className="flex items-center rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-100 hover:text-black"
+  >
+    {link.label}
+    {link.href === "/wishlist" && <WishlistNavBadge />}
+    {link.href === "/notifications" && <NotificationNavBadge />}
+  </Link>
+))}
           </div>
         )}
       </nav>
