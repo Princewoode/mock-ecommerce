@@ -6,7 +6,7 @@ async function getAuthHeaders() {
   const token = data.session?.access_token;
 
   if (!token) {
-    throw new Error("Please log in before accessing seller orders.");
+    throw new Error("Please log in before viewing seller orders.");
   }
 
   return {
@@ -23,7 +23,7 @@ async function handleResponse(response: Response) {
     result = JSON.parse(text);
   } catch {
     throw new Error(
-      `Server returned a non-JSON response. Check that /api/seller/orders exists and restart the dev server. Status: ${response.status}`
+      `Server returned a non-JSON response. Check seller order API route. Status: ${response.status}`
     );
   }
 
@@ -46,4 +46,28 @@ export async function getSellerOrders(): Promise<Order[]> {
   const result = await handleResponse(response);
 
   return result.orders || [];
+}
+
+export async function markSellerOrderReady({
+  orderId,
+  note,
+}: {
+  orderId: string;
+  note?: string;
+}) {
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch("/api/seller/orders", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders,
+    },
+    body: JSON.stringify({
+      orderId,
+      note,
+    }),
+  });
+
+  return handleResponse(response);
 }

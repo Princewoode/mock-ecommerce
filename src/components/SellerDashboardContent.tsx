@@ -6,6 +6,7 @@ import SellerAnalyticsOverview from "@/components/SellerAnalyticsOverview";
 import ProductVisual from "@/components/ProductVisual";
 import { formatCurrency } from "@/utils/currency";
 import { uploadProductImage } from "@/utils/imageUploadService";
+import SellerOrderManager from "@/components/SellerOrderManager";
 import {
   createSellerProduct,
   deleteSellerProduct,
@@ -571,6 +572,7 @@ export default function SellerDashboardContent() {
           )}
         </div>
       </div>
+      <SellerOrderManager />
     </>
   );
 }

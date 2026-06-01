@@ -15,6 +15,9 @@ type DatabaseOrderItem = {
   platform_commission_rate: number | string | null;
   platform_commission_amount: number | string | null;
   seller_payout_amount: number | string | null;
+    seller_fulfillment_status: string | null;
+  seller_ready_at: string | null;
+  seller_fulfillment_note: string | null;
 };
 
 type DatabaseOrder = {
@@ -135,6 +138,12 @@ function mapDatabaseOrder(order: DatabaseOrder): Order {
       platformCommissionRate: Number(item.platform_commission_rate || 0),
       platformCommissionAmount: Number(item.platform_commission_amount || 0),
       sellerPayoutAmount: Number(item.seller_payout_amount || 0),
+            sellerFulfillmentStatus:
+        item.seller_fulfillment_status || "Pending Seller Action",
+      sellerReadyAt: item.seller_ready_at
+        ? new Date(item.seller_ready_at).toLocaleString()
+        : "",
+      sellerFulfillmentNote: item.seller_fulfillment_note || "",
     })),
     total: Number(order.total),
   };

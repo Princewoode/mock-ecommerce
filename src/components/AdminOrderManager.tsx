@@ -672,7 +672,11 @@ export default function AdminOrderManager() {
                       <h4 className="font-semibold text-gray-900">
                         Fulfilment Workflow
                       </h4>
-
+<p className="mt-2 text-sm text-gray-600">
+  Before assigning courier pickup, check whether seller items are marked as
+  Ready for Pickup. This is useful when coordinating riders across Accra,
+  Kumasi, Tema, Takoradi, Tamale, Cape Coast, and regional towns.
+</p>
                       <div className="mt-4 space-y-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">
@@ -826,6 +830,28 @@ export default function AdminOrderManager() {
                             Seller: {item.sellerBusinessName}
                           </p>
                         )}
+                        {item.sellerBusinessName && (
+  <div
+    className={`mt-2 rounded-lg px-3 py-2 text-sm ${
+      item.sellerFulfillmentStatus === "Ready for Pickup"
+        ? "bg-green-50 text-green-700"
+        : "bg-orange-50 text-orange-700"
+    }`}
+  >
+    <p className="font-semibold">
+      Seller Fulfilment:{" "}
+      {item.sellerFulfillmentStatus || "Pending Seller Action"}
+    </p>
+
+    {item.sellerReadyAt && (
+      <p className="mt-1">Ready At: {item.sellerReadyAt}</p>
+    )}
+
+    {item.sellerFulfillmentNote && (
+      <p className="mt-1">Seller Note: {item.sellerFulfillmentNote}</p>
+    )}
+  </div>
+)}
                       </div>
                     </div>
 

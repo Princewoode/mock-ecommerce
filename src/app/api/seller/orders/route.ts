@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/serverAuth";
+import { createNotification } from "@/lib/notificationService";
 import { Order } from "@/types/models";
 
 type DatabaseSeller = {
@@ -10,6 +11,7 @@ type DatabaseSeller = {
 };
 
 type DatabaseOrderItem = {
+  order_id: string;
   product_id: number;
   product_name: string;
   product_category: string;
@@ -21,6 +23,9 @@ type DatabaseOrderItem = {
   platform_commission_rate: number | string | null;
   platform_commission_amount: number | string | null;
   seller_payout_amount: number | string | null;
+  seller_fulfillment_status: string | null;
+  seller_ready_at: string | null;
+  seller_fulfillment_note: string | null;
 };
 
 type DatabaseOrder = {
@@ -130,6 +135,12 @@ function mapSellerOrder(order: DatabaseOrder, sellerId: string): Order | null {
       platformCommissionRate: Number(item.platform_commission_rate || 0),
       platformCommissionAmount: Number(item.platform_commission_amount || 0),
       sellerPayoutAmount: Number(item.seller_payout_amount || 0),
+      sellerFulfillmentStatus:
+        item.seller_fulfillment_status || "Pending Seller Action",
+      sellerReadyAt: item.seller_ready_at
+        ? new Date(item.seller_ready_at).toLocaleString()
+        : "",
+      sellerFulfillmentNote: item.seller_fulfillment_note || "",
     })),
     total: sellerSubtotal,
   };
@@ -193,6 +204,79 @@ export async function GET(request: NextRequest) {
           error instanceof Error
             ? error.message
             : "Failed to load seller orders.",
+      },
+      { status: 401 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const seller = await getVerifiedSeller(request);
+    const payload = await request.json();
+
+    const orderId = String(payload.orderId || "");
+    const note = String(payload.note || "").trim();
+
+    if (!orderId) {
+      return NextResponse.json(
+        { message: "Order ID is required." },
+        { status: 400 }
+      );
+    }
+
+    const { data: matchingItems, error: itemFetchError } = await supabaseAdmin
+      .from("order_items")
+      .select("order_id, seller_id, product_name")
+      .eq("order_id", orderId)
+      .eq("seller_id", seller.id);
+
+    if (itemFetchError) {
+      return NextResponse.json(
+        { message: itemFetchError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!matchingItems || matchingItems.length === 0) {
+      return NextResponse.json(
+        { message: "No seller items found for this order." },
+        { status: 404 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
+      .from("order_items")
+      .update({
+        seller_fulfillment_status: "Ready for Pickup",
+        seller_ready_at: new Date().toISOString(),
+        seller_fulfillment_note: note,
+      })
+      .eq("order_id", orderId)
+      .eq("seller_id", seller.id);
+
+    if (error) {
+      return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+
+    await createNotification({
+      audience: "admin",
+      title: "Seller items ready for pickup",
+      message: `${seller.business_name} marked seller items as ready for pickup for order ${orderId}.`,
+      type: "seller_items_ready",
+      relatedOrderId: orderId,
+    });
+
+    return NextResponse.json({
+      message: "Order items marked as ready for pickup.",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to update seller order.",
       },
       { status: 401 }
     );

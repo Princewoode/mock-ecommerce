@@ -41,6 +41,9 @@ export type OrderItem = {
   platformCommissionRate?: number;
   platformCommissionAmount?: number;
   sellerPayoutAmount?: number;
+  sellerFulfillmentStatus?: string;
+sellerReadyAt?: string;
+sellerFulfillmentNote?: string;
 };
 
 export type Order = {
