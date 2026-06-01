@@ -42,6 +42,7 @@ export default function Navbar() {
     { href: "/products", label: "Products" },
     { href: "/categories", label: "Categories" },
     { href: "/deals", label: "Deals" },
+    { href: "/wishlist", label: "Wishlist" },
     { href: "/cart", label: `Cart (${cartCount})` },
     { href: "/checkout", label: "Checkout" },
     { href: "/orders", label: "Orders" },

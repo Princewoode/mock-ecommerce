@@ -5,7 +5,7 @@ import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
 import ShareProductButton from "@/components/ShareProductButton";
 import { formatCurrency } from "@/utils/currency";
-
+import WishlistButton from "@/components/WishlistButton";
 type ProductCardProps = {
   id?: number;
   name: string;
@@ -152,7 +152,7 @@ export default function ProductCard({
             </button>
           )}
         </div>
-
+{id && <WishlistButton productId={id} />}
         {id && hasGroupDeal && !isOutOfStock && (
           <AddGroupDealButton
             productId={id}

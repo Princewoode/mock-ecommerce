@@ -10,6 +10,7 @@ import ProductRatingSummary from "@/components/ProductRatingSummary";
 import { StoreProduct } from "@/types/models";
 import { formatCurrency } from "@/utils/currency";
 import { getProductCatalog } from "@/utils/productCatalogService";
+import WishlistButton from "@/components/WishlistButton";
 import { hasValidGroupDeal } from "@/utils/productPricing";
 import ShareProductButton from "@/components/ShareProductButton";
 type ProductDetailsContentProps = {
@@ -172,7 +173,7 @@ export default function ProductDetailsContent({
             >
               Back to Products
             </Link>
-
+<WishlistButton productId={product.id} />
             {!isOutOfStock && <AddToCartButton productId={product.id} />}
 
             {hasGroupDeal && !isOutOfStock && (
