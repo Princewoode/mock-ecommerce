@@ -324,6 +324,10 @@ export default function HomeMarketplaceContent() {
                 stock={product.stock}
                 sellerId={product.sellerId}
                 sellerBusinessName={product.sellerBusinessName}
+                groupDealEnabled={product.groupDealEnabled}
+groupPrice={product.groupPrice}
+groupMinQuantity={product.groupMinQuantity}
+groupDealNote={product.groupDealNote}
               />
             ))}
           </div>

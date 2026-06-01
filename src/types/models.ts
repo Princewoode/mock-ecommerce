@@ -10,6 +10,10 @@ export type StoreProduct = {
   sellerBusinessName?: string;
   productStatus?: "Pending Review" | "Approved" | "Rejected" | "Suspended";
   adminProductNote?: string;
+  groupDealEnabled?: boolean;
+  groupPrice?: number;
+  groupMinQuantity?: number;
+  groupDealNote?: string;
 };
 
 export type CartItem = {

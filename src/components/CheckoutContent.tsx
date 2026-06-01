@@ -18,6 +18,7 @@ import {
   ghanaRegions,
   isValidGhanaPhoneNumber,
 } from "@/utils/ghanaDelivery";
+import { getEffectiveProductPrice } from "@/utils/productPricing";
 
 const momoPaymentMethods = ["MTN Mobile Money", "Telecel Cash", "ATMoney"];
 
@@ -63,16 +64,23 @@ export default function CheckoutContent() {
       return [];
     }
 
+    const pricing = getEffectiveProductPrice({
+      product,
+      quantity: cartItem.quantity,
+    });
+
     return [
       {
         ...product,
         quantity: cartItem.quantity,
+        checkoutPrice: pricing.unitPrice,
+        groupDealApplies: pricing.groupDealApplies,
       },
     ];
   });
 
   const subtotal = checkoutProducts.reduce((sum, product) => {
-    return sum + product.price * product.quantity;
+    return sum + product.checkoutPrice * product.quantity;
   }, 0);
 
   const deliveryFee = getDeliveryFee(deliveryRegion);
@@ -165,7 +173,7 @@ export default function CheckoutContent() {
         name: product.name,
         category: product.category,
         image: product.image,
-        price: product.price,
+        price: product.checkoutPrice,
         quantity: product.quantity,
       })),
       total,
@@ -239,12 +247,26 @@ export default function CheckoutContent() {
                   <p className="text-sm text-gray-500">
                     Available stock: {product.stock}
                   </p>
+
+                  {product.groupDealApplies && (
+                    <p className="mt-1 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+                      Group deal price applied
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <p className="font-bold text-gray-900">
-                {formatCurrency(product.price * product.quantity)}
-              </p>
+              <div className="text-right">
+                {product.groupDealApplies && (
+                  <p className="text-sm text-gray-500 line-through">
+                    {formatCurrency(product.price * product.quantity)}
+                  </p>
+                )}
+
+                <p className="font-bold text-gray-900">
+                  {formatCurrency(product.checkoutPrice * product.quantity)}
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -371,10 +393,6 @@ export default function CheckoutContent() {
             onChange={(event) => setDeliveryPhone(event.target.value)}
             className="mt-2 w-full rounded-lg border border-gray-300 px-4 py-3"
           />
-
-          <p className="mt-2 text-sm text-gray-500">
-            Use a reachable Ghana phone number for delivery calls.
-          </p>
         </div>
 
         <div>
@@ -405,11 +423,6 @@ export default function CheckoutContent() {
             <h3 className="font-semibold text-gray-900">
               Mobile Money Payment Details
             </h3>
-
-            <p className="mt-2 text-sm text-gray-600">
-              Enter the MoMo number used for payment. Transaction reference can
-              be added now or confirmed later by admin.
-            </p>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>

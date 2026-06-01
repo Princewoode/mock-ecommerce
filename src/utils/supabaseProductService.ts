@@ -14,6 +14,10 @@ type SupabaseProductRow = {
   seller_business_name: string | null;
   product_status: "Pending Review" | "Approved" | "Rejected" | "Suspended" | null;
   admin_product_note: string | null;
+  group_deal_enabled: boolean | null;
+  group_price: number | string | null;
+  group_min_quantity: number | null;
+  group_deal_note: string | null;
 };
 
 export async function getSupabaseProducts(): Promise<StoreProduct[]> {
@@ -41,5 +45,9 @@ export async function getSupabaseProducts(): Promise<StoreProduct[]> {
     sellerBusinessName: product.seller_business_name || undefined,
     productStatus: product.product_status || "Approved",
     adminProductNote: product.admin_product_note || "",
+    groupDealEnabled: Boolean(product.group_deal_enabled),
+    groupPrice: product.group_price ? Number(product.group_price) : undefined,
+    groupMinQuantity: product.group_min_quantity || 2,
+    groupDealNote: product.group_deal_note || "",
   }));
 }

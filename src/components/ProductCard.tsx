@@ -14,6 +14,10 @@ type ProductCardProps = {
   stock?: number;
   sellerId?: string;
   sellerBusinessName?: string;
+  groupDealEnabled?: boolean;
+  groupPrice?: number;
+  groupMinQuantity?: number;
+  groupDealNote?: string;
 };
 
 export default function ProductCard({
@@ -26,9 +30,15 @@ export default function ProductCard({
   stock = 0,
   sellerId,
   sellerBusinessName,
+  groupDealEnabled,
+  groupPrice,
+  groupMinQuantity = 2,
+  groupDealNote,
 }: ProductCardProps) {
   const isOutOfStock = stock <= 0;
   const isLowStock = stock > 0 && stock <= 3;
+  const hasGroupDeal =
+    Boolean(groupDealEnabled) && Number(groupPrice || 0) > 0 && Number(groupPrice) < price;
 
   return (
     <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
@@ -58,7 +68,23 @@ export default function ProductCard({
         </span>
       </div>
 
-      <h2 className="mt-2 text-xl font-bold text-gray-900">{name}</h2>
+      {hasGroupDeal && (
+        <div className="mt-3 rounded-xl bg-orange-50 p-3">
+          <p className="text-sm font-bold text-orange-800">
+            Group Deal: {formatCurrency(Number(groupPrice))}
+          </p>
+
+          <p className="mt-1 text-xs text-orange-700">
+            Buy {groupMinQuantity}+ item(s) to unlock this price.
+          </p>
+
+          {groupDealNote && (
+            <p className="mt-1 text-xs text-orange-700">{groupDealNote}</p>
+          )}
+        </div>
+      )}
+
+      <h2 className="mt-3 text-xl font-bold text-gray-900">{name}</h2>
 
       {sellerBusinessName && sellerId && (
         <Link
@@ -79,9 +105,23 @@ export default function ProductCard({
 
       <p className="mt-2 line-clamp-2 text-gray-600">{description}</p>
 
-      <p className="mt-5 text-2xl font-bold text-gray-900">
-        {formatCurrency(price)}
-      </p>
+      <div className="mt-5">
+        {hasGroupDeal ? (
+          <>
+            <p className="text-sm text-gray-500 line-through">
+              {formatCurrency(price)}
+            </p>
+
+            <p className="text-2xl font-bold text-gray-900">
+              From {formatCurrency(Number(groupPrice))}
+            </p>
+          </>
+        ) : (
+          <p className="text-2xl font-bold text-gray-900">
+            {formatCurrency(price)}
+          </p>
+        )}
+      </div>
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         {id && (
