@@ -104,6 +104,12 @@ export default function HomeMarketplaceContent() {
               >
                 Browse Categories
               </Link>
+              <Link
+  href="/deals"
+  className="rounded-xl border border-orange-300 px-6 py-3 text-center font-semibold text-white"
+>
+  View Group Deals
+</Link>
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
