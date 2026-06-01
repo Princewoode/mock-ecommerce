@@ -19,7 +19,63 @@ function isValidGhanaPhoneNumber(phone: string) {
 
   return /^0\d{9}$/.test(cleanedPhone) || /^\+233\d{9}$/.test(cleanedPhone);
 }
+export async function GET(request: NextRequest) {
+  let userId = "";
 
+  try {
+    const user = await getAuthenticatedUser(request);
+    userId = user.id;
+  } catch {
+    return NextResponse.json(
+      {
+        isLoggedIn: false,
+        seller: null,
+      },
+      { status: 200 }
+    );
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("sellers")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({
+      isLoggedIn: true,
+      seller: null,
+    });
+  }
+
+  return NextResponse.json({
+    isLoggedIn: true,
+    seller: {
+      id: data.id,
+      userId: data.user_id,
+      businessName: data.business_name,
+      ownerName: data.owner_name,
+      phone: data.phone,
+      momoNumber: data.momo_number,
+      region: data.region,
+      city: data.city,
+      businessAddress: data.business_address,
+      productCategories: data.product_categories,
+      status: data.status,
+      verificationNote: data.verification_note || "",
+      storeDescription: data.store_description || "",
+      logoUrl: data.logo_url || "",
+      bannerUrl: data.banner_url || "",
+      createdAt: data.created_at
+        ? new Date(data.created_at).toLocaleString()
+        : "",
+    },
+  });
+}
 export async function POST(request: NextRequest) {
   let userId = "";
 

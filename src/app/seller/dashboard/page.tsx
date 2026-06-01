@@ -1,6 +1,4 @@
-import SellerDashboardContent from "@/components/SellerDashboardContent";
-import SellerOrderManager from "@/components/SellerOrderManager";
-import SellerProfileManager from "@/components/SellerProfileManager";
+import SellerDashboardGateway from "@/components/SellerDashboardGateway";
 
 export default function SellerDashboardPage() {
   return (
@@ -8,22 +6,20 @@ export default function SellerDashboardPage() {
       <section className="mx-auto max-w-6xl">
         <div className="rounded-3xl bg-white p-8 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            Seller Dashboard
+            Seller Center
           </p>
 
           <h1 className="mt-3 text-4xl font-bold text-gray-900">
-            Manage Your Store
+            Seller Dashboard
           </h1>
 
           <p className="mt-4 max-w-3xl text-lg text-gray-600">
-            Verified sellers can add products, update prices, manage stock, view
-            orders, and build a trusted Ghana storefront.
+            Apply as a seller, manage your verified storefront, upload products,
+            track orders, monitor payouts, and participate in group/bulk deals.
           </p>
         </div>
 
-        <SellerProfileManager />
-        <SellerDashboardContent />
-        <SellerOrderManager />
+        <SellerDashboardGateway />
       </section>
     </main>
   );

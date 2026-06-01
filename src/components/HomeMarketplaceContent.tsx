@@ -358,10 +358,10 @@ groupDealNote={product.groupDealNote}
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/seller/apply"
+             href="/seller/dashboard"
               className="rounded-lg bg-black px-6 py-3 text-center text-white"
             >
-              Apply as Seller
+              Start Selling
             </Link>
 
             <Link
