@@ -9,6 +9,7 @@ import ProductRatingSummary from "@/components/ProductRatingSummary";
 import { StoreProduct } from "@/types/models";
 import { formatCurrency } from "@/utils/currency";
 import { getProductCatalog } from "@/utils/productCatalogService";
+import { hasValidGroupDeal } from "@/utils/productPricing";
 
 type ProductDetailsContentProps = {
   productId: number;
@@ -65,6 +66,10 @@ export default function ProductDetailsContent({
   }
 
   const isOutOfStock = product.stock <= 0;
+  const hasGroupDeal = hasValidGroupDeal(product);
+  const groupSavings = hasGroupDeal
+    ? product.price - Number(product.groupPrice || 0)
+    : 0;
 
   return (
     <>
@@ -99,12 +104,55 @@ export default function ProductDetailsContent({
 
           <p className="mt-5 text-gray-700">{product.description}</p>
 
-          <p className="mt-6 text-3xl font-bold text-gray-900">
-            {formatCurrency(product.price)}
-          </p>
+          <div className="mt-6">
+            {hasGroupDeal ? (
+              <>
+                <p className="text-sm text-gray-500 line-through">
+                  Normal price: {formatCurrency(product.price)}
+                </p>
+
+                <p className="mt-1 text-3xl font-bold text-gray-900">
+                  Group price: {formatCurrency(Number(product.groupPrice))}
+                </p>
+
+                <p className="mt-2 text-sm font-semibold text-orange-700">
+                  Save {formatCurrency(groupSavings)} per item when you buy{" "}
+                  {product.groupMinQuantity || 2}+ item(s).
+                </p>
+              </>
+            ) : (
+              <p className="text-3xl font-bold text-gray-900">
+                {formatCurrency(product.price)}
+              </p>
+            )}
+          </div>
+
+          {hasGroupDeal && (
+            <div className="mt-5 rounded-2xl bg-orange-50 p-5">
+              <p className="font-bold text-orange-900">
+                Group / Bulk Deal Available
+              </p>
+
+              <p className="mt-2 text-sm text-orange-800">
+                Add at least {product.groupMinQuantity || 2} item(s) to your
+                cart to unlock the group deal price at checkout.
+              </p>
+
+              {product.groupDealNote && (
+                <p className="mt-2 text-sm text-orange-800">
+                  {product.groupDealNote}
+                </p>
+              )}
+
+              <p className="mt-3 text-xs text-orange-700">
+                This is useful for friends buying together, families, traders,
+                resellers, boutiques, and small wholesalers.
+              </p>
+            </div>
+          )}
 
           <p
-            className={`mt-4 inline-block rounded-full px-4 py-2 text-sm font-semibold ${
+            className={`mt-5 inline-block rounded-full px-4 py-2 text-sm font-semibold ${
               isOutOfStock
                 ? "bg-red-50 text-red-700"
                 : "bg-green-50 text-green-700"
@@ -124,6 +172,15 @@ export default function ProductDetailsContent({
             </Link>
 
             {!isOutOfStock && <AddToCartButton productId={product.id} />}
+
+            {hasGroupDeal && (
+              <Link
+                href="/deals"
+                className="rounded-lg border border-orange-300 px-6 py-3 text-center text-orange-700"
+              >
+                View More Deals
+              </Link>
+            )}
           </div>
         </div>
       </div>
