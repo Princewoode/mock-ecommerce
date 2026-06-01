@@ -395,7 +395,12 @@ groupDealNote={product.groupDealNote}
             >
               View Orders
             </Link>
-
+<Link
+  href="/buyer/dashboard"
+  className="rounded-lg border border-gray-300 px-6 py-3 text-center text-gray-900"
+>
+  Buyer Dashboard
+</Link>
             <Link
               href="/notifications"
               className="rounded-lg border border-gray-300 px-6 py-3 text-center text-gray-900"

@@ -47,9 +47,9 @@ export default function Navbar() {
     { href: "/checkout", label: "Checkout" },
     { href: "/orders", label: "Orders" },
     {
-      href: "/account",
-      label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account",
-    },
+  href: customerName ? "/buyer/dashboard" : "/account",
+  label: customerName ? `Hi, ${customerName.split(" ")[0]}` : "Account",
+},
     { href: "/seller/apply", label: "Sell" },
     { href: "/seller/dashboard", label: "Seller Dashboard" },
     { href: "/notifications", label: "Notifications" },
