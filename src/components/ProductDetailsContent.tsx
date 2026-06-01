@@ -11,7 +11,7 @@ import { StoreProduct } from "@/types/models";
 import { formatCurrency } from "@/utils/currency";
 import { getProductCatalog } from "@/utils/productCatalogService";
 import { hasValidGroupDeal } from "@/utils/productPricing";
-
+import ShareProductButton from "@/components/ShareProductButton";
 type ProductDetailsContentProps = {
   productId: number;
 };
@@ -192,6 +192,17 @@ export default function ProductDetailsContent({
               </Link>
             )}
           </div>
+          <div className="mt-5">
+  <ShareProductButton
+    productId={product.id}
+    productName={product.name}
+    price={product.price}
+    sellerBusinessName={product.sellerBusinessName}
+    groupDealEnabled={product.groupDealEnabled}
+    groupPrice={product.groupPrice}
+    groupMinQuantity={product.groupMinQuantity}
+  />
+</div>
         </div>
       </div>
 

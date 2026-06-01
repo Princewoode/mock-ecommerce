@@ -21,7 +21,7 @@ export default function AddGroupDealButton({
 
   function handleAddGroupDeal() {
     if (!canAddGroupDeal) {
-      setMessage(`Only ${stock} item(s) available. Group deal cannot be unlocked.`);
+      setMessage(`Only ${stock} item(s) available.`);
       return;
     }
 
@@ -52,7 +52,7 @@ export default function AddGroupDealButton({
     saveCartItems(updatedItems);
     window.dispatchEvent(new Event("cartUpdated"));
 
-    setMessage(`Group deal added with ${minimumQuantity} item(s).`);
+    setMessage(`Added ${minimumQuantity} item(s).`);
   }
 
   return (
@@ -61,12 +61,12 @@ export default function AddGroupDealButton({
         type="button"
         onClick={handleAddGroupDeal}
         disabled={!canAddGroupDeal}
-        className="rounded-lg bg-orange-600 px-5 py-2 text-white disabled:bg-gray-300 disabled:text-gray-500"
+        className="w-full rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:bg-gray-300 disabled:text-gray-500"
       >
         Add Group Deal
       </button>
 
-      {message && <p className="mt-2 text-sm text-gray-600">{message}</p>}
+      {message && <p className="mt-2 text-xs text-gray-500">{message}</p>}
     </div>
   );
 }

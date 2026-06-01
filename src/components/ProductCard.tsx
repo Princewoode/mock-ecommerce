@@ -3,6 +3,7 @@ import AddToCartButton from "@/components/AddToCartButton";
 import AddGroupDealButton from "@/components/AddGroupDealButton";
 import ProductVisual from "@/components/ProductVisual";
 import ProductRatingSummary from "@/components/ProductRatingSummary";
+import ShareProductButton from "@/components/ShareProductButton";
 import { formatCurrency } from "@/utils/currency";
 
 type ProductCardProps = {
@@ -46,7 +47,7 @@ export default function ProductCard({
     groupMinQuantity > 1;
 
   return (
-    <div className="group rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
+    <div className="rounded-2xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
       {image && (
         <div className="mb-5">
           <ProductVisual image={image} alt={name} size="medium" />
@@ -128,17 +129,29 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-        {id && (
-          <Link
-            href={`/products/${id}`}
-            className="rounded-lg border border-gray-300 px-5 py-2 text-center text-gray-900 hover:bg-gray-50"
-          >
-            View Details
-          </Link>
-        )}
+      <div className="mt-5 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {id && (
+            <Link
+              href={`/products/${id}`}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-center text-sm font-semibold text-gray-900 hover:bg-gray-50"
+            >
+              Details
+            </Link>
+          )}
 
-        {id && !isOutOfStock && <AddToCartButton productId={id} />}
+          {id && !isOutOfStock && <AddToCartButton productId={id} />}
+
+          {isOutOfStock && (
+            <button
+              type="button"
+              disabled
+              className="rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-500"
+            >
+              Unavailable
+            </button>
+          )}
+        </div>
 
         {id && hasGroupDeal && !isOutOfStock && (
           <AddGroupDealButton
@@ -148,14 +161,16 @@ export default function ProductCard({
           />
         )}
 
-        {isOutOfStock && (
-          <button
-            type="button"
-            disabled
-            className="rounded-lg bg-gray-200 px-5 py-2 text-gray-500"
-          >
-            Unavailable
-          </button>
+        {id && (
+          <ShareProductButton
+            productId={id}
+            productName={name}
+            price={price}
+            sellerBusinessName={sellerBusinessName}
+            groupDealEnabled={groupDealEnabled}
+            groupPrice={groupPrice}
+            groupMinQuantity={groupMinQuantity}
+          />
         )}
       </div>
     </div>
