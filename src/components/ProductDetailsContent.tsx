@@ -12,6 +12,8 @@ import { formatCurrency } from "@/utils/currency";
 import { getProductCatalog } from "@/utils/productCatalogService";
 import WishlistButton from "@/components/WishlistButton";
 import { hasValidGroupDeal } from "@/utils/productPricing";
+import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import { recordProductView } from "@/utils/recentlyViewedStorage";
 import ShareProductButton from "@/components/ShareProductButton";
 type ProductDetailsContentProps = {
   productId: number;
@@ -32,7 +34,12 @@ export default function ProductDetailsContent({
         products.find((item) => item.id === productId) || null;
 
       setProduct(foundProduct);
-      setIsLoading(false);
+
+if (foundProduct) {
+  recordProductView(foundProduct.id);
+}
+
+setIsLoading(false);
     }
 
     loadProduct();
@@ -208,6 +215,11 @@ export default function ProductDetailsContent({
       </div>
 
       <ProductReviews productId={product.id} />
+      <RecentlyViewedProducts
+  excludeProductId={product.id}
+  limit={3}
+  compact
+/>
     </>
   );
 }
