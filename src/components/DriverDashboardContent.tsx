@@ -8,7 +8,7 @@ import {
   updateDriverDeliveryStatus,
 } from "@/utils/driverDeliveryService";
 import { formatCurrency } from "@/utils/currency";
-
+import DeliveryMessagesPanel from "@/components/DeliveryMessagesPanel";
 const driverStatuses = [
   "Pickup Started",
   "Picked Up",
@@ -425,7 +425,10 @@ export default function DriverDashboardContent() {
                       </div>
                     )}
                   </div>
-
+<DeliveryMessagesPanel
+  orderId={assignment.orderId}
+  viewerRole="driver"
+/>
                   <div className="mt-5 rounded-xl bg-white p-4 ring-1 ring-gray-200">
                     <p className="font-semibold text-gray-900">
                       Update Delivery Progress

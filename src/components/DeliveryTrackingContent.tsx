@@ -10,7 +10,7 @@ import {
   CustomerDeliveryTrackingOrder,
   getCustomerDeliveryTracking,
 } from "@/utils/customerDeliveryTrackingService";
-
+import DeliveryMessagesPanel from "@/components/DeliveryMessagesPanel";
 type DeliveryTrackingContentProps = {
   orderId: string;
 };
@@ -298,7 +298,7 @@ export default function DeliveryTrackingContent({
           </div>
         )}
       </section>
-
+<DeliveryMessagesPanel orderId={order.id} viewerRole="customer" />
       <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
         <div className="border-b pb-4">
           <h2 className="text-2xl font-bold text-gray-900">

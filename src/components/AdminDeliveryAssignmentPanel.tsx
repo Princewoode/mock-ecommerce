@@ -8,7 +8,7 @@ import {
   getAdminDeliveryAssignmentData,
   updateDeliveryAssignmentStatus,
 } from "@/utils/adminDeliveryAssignmentService";
-
+import DeliveryMessagesPanel from "@/components/DeliveryMessagesPanel";
 const assignmentTypes = [
   "Seller Pickup",
   "Intra-city",
@@ -424,7 +424,7 @@ export default function AdminDeliveryAssignmentPanel() {
                       </div>
                     )}
                   </div>
-
+<DeliveryMessagesPanel orderId={order.id} viewerRole="admin" />
                   {draft && (
                     <div className="rounded-xl bg-gray-50 p-5">
                       <p className="font-semibold text-gray-900">

@@ -202,3 +202,15 @@ export type DeliveryTrackingEvent = {
   locationNote?: string;
   createdAt: string;
 };
+export type DeliveryMessage = {
+  id: string;
+  orderId: string;
+  assignmentId?: string;
+  senderRole: "customer" | "driver" | "admin";
+  senderName: string;
+  senderUserId?: string;
+  senderDriverId?: string;
+  message: string;
+  isInternal?: boolean;
+  createdAt: string;
+};
