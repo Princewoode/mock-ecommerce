@@ -148,3 +148,25 @@ export type AppNotification = {
   isRead: boolean;
   createdAt: string;
 };
+export type DeliveryDriverProfile = {
+  id: string;
+  userId?: string;
+  fullName: string;
+  phone: string;
+  platformPhone?: string;
+  momoNumber: string;
+  region: string;
+  city: string;
+  vehicleType: string;
+  vehicleNumber?: string;
+  licenseNumber?: string;
+  ghanaCardReference?: string;
+  intraCityZones?: string;
+  interCityRoutes?: string;
+  availability?: string;
+  emergencyContact?: string;
+  driverNote?: string;
+  status: "Pending" | "Verified" | "Rejected" | "Suspended";
+  verificationNote?: string;
+  createdAt: string;
+};

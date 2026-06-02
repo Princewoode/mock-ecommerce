@@ -410,6 +410,28 @@ groupDealNote={product.groupDealNote}
           </div>
         </div>
       </section>
+      <section className="mt-12 rounded-3xl bg-white p-8 shadow-sm">
+  <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+    Delivery Partners
+  </p>
+
+  <h2 className="mt-3 text-3xl font-bold text-gray-900">
+    Deliver packages across Ghana routes.
+  </h2>
+
+  <p className="mt-4 max-w-3xl text-gray-600">
+    Apply as an intra-city rider, inter-city courier, final-mile driver, or
+    route-based delivery partner. Verified drivers will later receive delivery
+    assignments based on city, region, route coverage, and availability.
+  </p>
+
+  <Link
+    href="/driver/apply"
+    className="mt-6 inline-block rounded-lg bg-black px-6 py-3 text-white"
+  >
+    Apply as Delivery Driver
+  </Link>
+</section>
     </>
   );
 }

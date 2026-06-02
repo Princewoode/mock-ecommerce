@@ -9,6 +9,7 @@ import AdminPayoutManager from "@/components/AdminPayoutManager";
 import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
 import AdminDeliveryReadinessPanel from "@/components/AdminDeliveryReadinessPanel";
 import AdminNotificationPanel from "@/components/AdminNotificationPanel";
+import AdminDeliveryDriverManager from "@/components/AdminDeliveryDriverManager";
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_AUTH_KEY = "mockAdminLoggedIn";
 const ADMIN_API_PASSWORD_KEY = "mockAdminApiPassword";
@@ -119,6 +120,7 @@ export default function ProtectedAdmin() {
       <AdminUnreadNotificationSummary />
 <AdminAnalyticsDashboard />
 <AdminNotificationPanel />
+<AdminDeliveryDriverManager />
 <AdminDeliveryReadinessPanel />
       <AdminProductManager />
 <AdminOrderManager />
