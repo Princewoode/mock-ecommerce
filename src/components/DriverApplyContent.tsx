@@ -182,6 +182,14 @@ export default function DriverApplyContent() {
             Admin note: {driver.verificationNote}
           </div>
         )}
+        {driver.status === "Verified" && (
+  <Link
+    href="/driver/dashboard"
+    className="mt-6 inline-block rounded-lg bg-black px-6 py-3 text-white"
+  >
+    Open Driver Dashboard
+  </Link>
+)}
       </div>
     );
   }

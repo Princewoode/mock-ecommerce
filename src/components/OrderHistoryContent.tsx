@@ -392,12 +392,6 @@ export default function OrderHistoryContent() {
                   className="rounded-lg border border-orange-300 px-5 py-2 text-orange-700 disabled:text-gray-400"
                 >
                   Request Refund
-                  <Link
-  href={`/orders/${order.id}/tracking`}
-  className="rounded-lg border border-blue-300 px-4 py-2 text-center text-sm font-semibold text-blue-700"
->
-  Track Delivery
-</Link>
                 </button>
 
                 <button
@@ -407,12 +401,6 @@ export default function OrderHistoryContent() {
                   className="rounded-lg border border-red-300 px-5 py-2 text-red-600 disabled:text-gray-400"
                 >
                   Open Dispute
-                  <Link
-  href={`/orders/${order.id}/tracking`}
-  className="rounded-lg border border-blue-300 px-4 py-2 text-center text-sm font-semibold text-blue-700"
->
-  Track Delivery
-</Link>
                 </button>
               </div>
 
