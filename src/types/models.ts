@@ -170,3 +170,35 @@ export type DeliveryDriverProfile = {
   verificationNote?: string;
   createdAt: string;
 };
+export type DeliveryAssignment = {
+  id: string;
+  orderId: string;
+  driverId?: string;
+  driverName?: string;
+  driverPhone?: string;
+  driverPlatformPhone?: string;
+  driverVehicleType?: string;
+  driverVehicleNumber?: string;
+  assignmentType: string;
+  assignmentStatus: string;
+  pickupRegion?: string;
+  pickupCity?: string;
+  dropoffRegion?: string;
+  dropoffCity?: string;
+  routeNote?: string;
+  adminNote?: string;
+  assignedAt: string;
+  updatedAt?: string;
+};
+
+export type DeliveryTrackingEvent = {
+  id: string;
+  orderId: string;
+  assignmentId?: string;
+  driverId?: string;
+  eventTitle: string;
+  eventMessage: string;
+  eventStatus: string;
+  locationNote?: string;
+  createdAt: string;
+};
