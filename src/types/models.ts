@@ -214,3 +214,19 @@ export type DeliveryMessage = {
   isInternal?: boolean;
   createdAt: string;
 };
+export type DeliveryRoute = {
+  id: string;
+  routeName: string;
+  routeType: "Intra-city" | "Inter-city" | "Seller Pickup" | "Final Mile";
+  originRegion?: string;
+  originCity?: string;
+  destinationRegion?: string;
+  destinationCity?: string;
+  routeZones?: string;
+  estimatedDeliveryFee?: number;
+  estimatedTransitTime?: string;
+  isActive: boolean;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt?: string;
+};

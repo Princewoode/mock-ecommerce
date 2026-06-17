@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DeliveryAssignment, DeliveryDriverProfile, Order } from "@/types/models";
 import { getAdminDatabaseOrders } from "@/utils/databaseOrderService";
+import { buildDriverMatchSuggestions } from "@/utils/deliveryRouteMatching";
 import {
   createDeliveryAssignment,
   getAdminDeliveryAssignmentData,
@@ -295,7 +296,17 @@ export default function AdminDeliveryAssignmentPanel() {
             const draft = drafts[order.id];
             const orderAssignments = getOrderAssignments(order.id);
             const ready = isOrderReadyForAssignment(order);
-
+  const driverSuggestions = draft
+    ? buildDriverMatchSuggestions({
+        order,
+        drivers,
+        assignmentType: draft.assignmentType,
+        pickupCity: draft.pickupCity,
+        pickupRegion: draft.pickupRegion,
+        dropoffCity: draft.dropoffCity,
+        dropoffRegion: draft.dropoffRegion,
+      })
+    : [];
             return (
               <div
                 key={order.id}
@@ -441,12 +452,13 @@ export default function AdminDeliveryAssignmentPanel() {
                           className="w-full rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
                         >
                           <option value="">Select verified driver</option>
-                          {drivers.map((driver) => (
-                            <option key={driver.id} value={driver.id}>
-                              {driver.fullName} · {driver.city} ·{" "}
-                              {driver.vehicleType}
-                            </option>
-                          ))}
+                          {driverSuggestions.map((suggestion) => (
+  <option key={suggestion.driver.id} value={suggestion.driver.id}>
+    {suggestion.score}% · {suggestion.matchLabel} ·{" "}
+    {suggestion.driver.fullName} · {suggestion.driver.city} ·{" "}
+    {suggestion.driver.vehicleType}
+  </option>
+))}
                         </select>
 
                         <select
@@ -520,7 +532,48 @@ export default function AdminDeliveryAssignmentPanel() {
                         >
                           Assign Driver
                         </button>
+{driverSuggestions.length > 0 && (
+  <div className="rounded-xl bg-blue-50 p-4">
+    <p className="font-semibold text-gray-900">
+      Suggested Drivers
+    </p>
 
+    <p className="mt-1 text-sm text-gray-600">
+      Ranked using driver city, region, route coverage, vehicle type, and
+      order destination.
+    </p>
+
+    <div className="mt-3 space-y-3">
+      {driverSuggestions.slice(0, 3).map((suggestion) => (
+        <div
+          key={suggestion.driver.id}
+          className="rounded-lg bg-white p-3"
+        >
+          <div className="flex flex-col justify-between gap-2 md:flex-row">
+            <p className="font-semibold text-gray-900">
+              {suggestion.driver.fullName}
+            </p>
+
+            <span className="rounded-full bg-black px-3 py-1 text-xs font-semibold text-white">
+              {suggestion.score}% · {suggestion.matchLabel}
+            </span>
+          </div>
+
+          <p className="mt-1 text-sm text-gray-600">
+            {suggestion.driver.city}, {suggestion.driver.region} ·{" "}
+            {suggestion.driver.vehicleType}
+          </p>
+
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-gray-600">
+            {suggestion.reasons.slice(0, 3).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
                         {!ready && (
                           <p className="text-sm text-orange-700">
                             Driver assignment is disabled until seller items are

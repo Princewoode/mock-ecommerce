@@ -6,6 +6,7 @@ import AdminOrderManager from "@/components/AdminOrderManager";
 import AdminReviewManager from "@/components/AdminReviewManager";
 import AdminSellerManager from "@/components/AdminSellerManager";
 import AdminPayoutManager from "@/components/AdminPayoutManager";
+import AdminDeliveryRouteManager from "@/components/AdminDeliveryRouteManager";
 import AdminAnalyticsDashboard from "@/components/AdminAnalyticsDashboard";
 import AdminDeliveryReadinessPanel from "@/components/AdminDeliveryReadinessPanel";
 import AdminNotificationPanel from "@/components/AdminNotificationPanel";
@@ -122,6 +123,7 @@ export default function ProtectedAdmin() {
 <AdminAnalyticsDashboard />
 <AdminNotificationPanel />
 <AdminDeliveryDriverManager />
+<AdminDeliveryRouteManager />
 <AdminDeliveryAssignmentPanel />
 <AdminDeliveryReadinessPanel />
       <AdminProductManager />
