@@ -37,7 +37,11 @@ export default function DriverDashboardContent() {
   const [driverVehicle, setDriverVehicle] = useState("");
   const [message, setMessage] = useState("");
   const [statusDrafts, setStatusDrafts] = useState<Record<string, string>>({});
-  const [locationNotes, setLocationNotes] = useState<Record<string, string>>(
+  const [locationNotes, setLocationNotes] = useState<Record<string, string>>({});
+    const [latitudeDrafts, setLatitudeDrafts] = useState<Record<string, string>>(
+    {}
+  );
+  const [longitudeDrafts, setLongitudeDrafts] = useState<Record<string, string>>(
     {}
   );
   const [filter, setFilter] = useState("active");
@@ -93,13 +97,27 @@ export default function DriverDashboardContent() {
       [assignmentId]: value,
     }));
   }
+  function updateLatitudeDraft(assignmentId: string, value: string) {
+    setLatitudeDrafts((current) => ({
+      ...current,
+      [assignmentId]: value,
+    }));
+  }
 
+  function updateLongitudeDraft(assignmentId: string, value: string) {
+    setLongitudeDrafts((current) => ({
+      ...current,
+      [assignmentId]: value,
+    }));
+  }
   async function handleUpdateStatus(assignmentId: string) {
     try {
       const result = await updateDriverDeliveryStatus({
         assignmentId,
         assignmentStatus: statusDrafts[assignmentId] || "In Transit",
         locationNote: locationNotes[assignmentId] || "",
+                latitude: latitudeDrafts[assignmentId] || "",
+        longitude: longitudeDrafts[assignmentId] || "",
       });
 
       setMessage(result.message || "Delivery status updated.");
@@ -434,7 +452,7 @@ export default function DriverDashboardContent() {
                       Update Delivery Progress
                     </p>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1.5fr_auto]">
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <select
                         value={
                           statusDrafts[assignment.id] ||
@@ -460,7 +478,23 @@ export default function DriverDashboardContent() {
                         placeholder="Location note, e.g. picked up from Madina seller"
                         className="rounded-lg border border-gray-300 px-4 py-3"
                       />
+<input
+  value={latitudeDrafts[assignment.id] || ""}
+  onChange={(event) =>
+    updateLatitudeDraft(assignment.id, event.target.value)
+  }
+  placeholder="Current latitude"
+  className="rounded-lg border border-gray-300 px-4 py-3"
+/>
 
+<input
+  value={longitudeDrafts[assignment.id] || ""}
+  onChange={(event) =>
+    updateLongitudeDraft(assignment.id, event.target.value)
+  }
+  placeholder="Current longitude"
+  className="rounded-lg border border-gray-300 px-4 py-3"
+/>
                       <button
                         type="button"
                         onClick={() => handleUpdateStatus(assignment.id)}

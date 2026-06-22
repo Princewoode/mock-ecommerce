@@ -14,7 +14,7 @@ import DeliveryMessagesPanel from "@/components/DeliveryMessagesPanel";
 type DeliveryTrackingContentProps = {
   orderId: string;
 };
-
+import SimpleDeliveryMap from "@/components/SimpleDeliveryMap";
 function getStatusColor(status: string) {
   if (["Delivered"].includes(status)) {
     return "bg-green-50 text-green-700";
@@ -200,7 +200,20 @@ export default function DeliveryTrackingContent({
           </div>
         )}
       </div>
-
+{latestAssignment && (
+  <section className="mt-8">
+    <SimpleDeliveryMap
+      title="Delivery Location Map"
+      pickupLat={latestAssignment.pickupLat}
+      pickupLng={latestAssignment.pickupLng}
+      dropoffLat={latestAssignment.dropoffLat}
+      dropoffLng={latestAssignment.dropoffLng}
+      currentLat={latestAssignment.currentLat}
+      currentLng={latestAssignment.currentLng}
+      locationNote={latestAssignment.currentLocationNote}
+    />
+  </section>
+)}
       <section className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
         <div className="border-b pb-4">
           <h2 className="text-2xl font-bold text-gray-900">
@@ -354,7 +367,13 @@ export default function DeliveryTrackingContent({
                         </p>
                       )}
                     </div>
-
+{typeof event.latitude === "number" &&
+  typeof event.longitude === "number" && (
+    <p className="mt-2 text-sm text-gray-500">
+      Coordinates: {event.latitude.toFixed(6)},{" "}
+      {event.longitude.toFixed(6)}
+    </p>
+  )}
                     <span
                       className={`h-fit rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(
                         event.eventStatus

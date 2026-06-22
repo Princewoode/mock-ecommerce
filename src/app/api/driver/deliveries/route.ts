@@ -12,7 +12,19 @@ const allowedDriverStatuses = [
   "Delivered",
   "Failed Attempt",
 ];
+function parseCoordinate(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  return numericValue;
+}
 async function getVerifiedDriver(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
 
@@ -77,6 +89,13 @@ function mapAssignment(row: any) {
           createdAt: order.created_at
             ? new Date(order.created_at).toLocaleString()
             : "",
+                pickupLat: row.pickup_lat === null ? undefined : Number(row.pickup_lat),
+    pickupLng: row.pickup_lng === null ? undefined : Number(row.pickup_lng),
+    dropoffLat: row.dropoff_lat === null ? undefined : Number(row.dropoff_lat),
+    dropoffLng: row.dropoff_lng === null ? undefined : Number(row.dropoff_lng),
+    currentLat: row.current_lat === null ? undefined : Number(row.current_lat),
+    currentLng: row.current_lng === null ? undefined : Number(row.current_lng),
+    currentLocationNote: row.current_location_note || "",
         }
       : null,
   };
@@ -130,7 +149,8 @@ export async function PUT(request: NextRequest) {
     const assignmentId = String(payload.assignmentId || "");
     const assignmentStatus = String(payload.assignmentStatus || "");
     const locationNote = String(payload.locationNote || "").trim();
-
+    const latitude = parseCoordinate(payload.latitude);
+    const longitude = parseCoordinate(payload.longitude);
     if (!assignmentId || !allowedDriverStatuses.includes(assignmentStatus)) {
       return NextResponse.json(
         { message: "Valid assignment ID and delivery status are required." },
@@ -158,6 +178,9 @@ export async function PUT(request: NextRequest) {
       .update({
         assignment_status: assignmentStatus,
         updated_at: new Date().toISOString(),
+                current_lat: latitude,
+        current_lng: longitude,
+        current_location_note: locationNote,
       })
       .eq("id", assignmentId)
       .eq("driver_id", driver.id)
@@ -176,8 +199,20 @@ export async function PUT(request: NextRequest) {
       event_message: `${driver.full_name} updated delivery status to ${assignmentStatus}.`,
       event_status: assignmentStatus,
       location_note: locationNote,
+            latitude,
+      longitude,
     });
-
+    if (latitude !== null && longitude !== null) {
+      await supabaseAdmin
+        .from("delivery_drivers")
+        .update({
+          current_lat: latitude,
+          current_lng: longitude,
+          last_location_note: locationNote,
+          last_location_at: new Date().toISOString(),
+        })
+        .eq("id", driver.id);
+    }
     if (assignmentStatus === "Out for Final Delivery") {
       await supabaseAdmin
         .from("orders")

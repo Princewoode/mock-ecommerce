@@ -29,6 +29,13 @@ export type DriverDeliveryAssignment = {
     adminNote: string;
     createdAt: string;
   } | null;
+    pickupLat?: number;
+  pickupLng?: number;
+  dropoffLat?: number;
+  dropoffLng?: number;
+  currentLat?: number;
+  currentLng?: number;
+  currentLocationNote?: string;
 };
 
 export type DriverDeliveryResponse = {
@@ -92,10 +99,14 @@ export async function updateDriverDeliveryStatus({
   assignmentId,
   assignmentStatus,
   locationNote,
+  latitude,
+  longitude,
 }: {
   assignmentId: string;
   assignmentStatus: string;
   locationNote?: string;
+  latitude?: string;
+  longitude?: string;
 }) {
   const authHeaders = await getAuthHeaders();
 
@@ -105,10 +116,12 @@ export async function updateDriverDeliveryStatus({
       "Content-Type": "application/json",
       ...authHeaders,
     },
-    body: JSON.stringify({
+        body: JSON.stringify({
       assignmentId,
       assignmentStatus,
       locationNote,
+      latitude,
+      longitude,
     }),
   });
 

@@ -169,6 +169,12 @@ export type DeliveryDriverProfile = {
   status: "Pending" | "Verified" | "Rejected" | "Suspended";
   verificationNote?: string;
   createdAt: string;
+    baseLat?: number;
+  baseLng?: number;
+  currentLat?: number;
+  currentLng?: number;
+  lastLocationNote?: string;
+  lastLocationAt?: string;
 };
 export type DeliveryAssignment = {
   id: string;
@@ -189,6 +195,13 @@ export type DeliveryAssignment = {
   adminNote?: string;
   assignedAt: string;
   updatedAt?: string;
+    pickupLat?: number;
+  pickupLng?: number;
+  dropoffLat?: number;
+  dropoffLng?: number;
+  currentLat?: number;
+  currentLng?: number;
+  currentLocationNote?: string;
 };
 
 export type DeliveryTrackingEvent = {
@@ -201,6 +214,8 @@ export type DeliveryTrackingEvent = {
   eventStatus: string;
   locationNote?: string;
   createdAt: string;
+    latitude?: number;
+  longitude?: number;
 };
 export type DeliveryMessage = {
   id: string;
@@ -229,4 +244,8 @@ export type DeliveryRoute = {
   adminNote?: string;
   createdAt: string;
   updatedAt?: string;
+    originLat?: number;
+  originLng?: number;
+  destinationLat?: number;
+  destinationLng?: number;
 };

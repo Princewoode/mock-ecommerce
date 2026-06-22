@@ -56,6 +56,10 @@ export async function createDeliveryAssignment(payload: {
   pickupCity?: string;
   dropoffRegion?: string;
   dropoffCity?: string;
+  pickupLat?: string;
+  pickupLng?: string;
+  dropoffLat?: string;
+  dropoffLng?: string;
   routeNote?: string;
   adminNote?: string;
 }) {
@@ -75,6 +79,8 @@ export async function updateDeliveryAssignmentStatus(payload: {
   assignmentId: string;
   assignmentStatus: string;
   locationNote?: string;
+  latitude?: string;
+  longitude?: string;
 }) {
   const response = await fetch("/api/admin/delivery-assignments", {
     method: "PUT",

@@ -8,7 +8,19 @@ function verifyAdminRequest(request: NextRequest) {
 
   return Boolean(adminPassword) && receivedPassword === adminPassword;
 }
+function parseCoordinate(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  return numericValue;
+}
 function mapDriver(row: any) {
   return {
     id: row.id,
@@ -60,6 +72,13 @@ function mapAssignment(row: any) {
     updatedAt: row.updated_at
       ? new Date(row.updated_at).toLocaleString()
       : "",
+          pickupLat: row.pickup_lat === null ? undefined : Number(row.pickup_lat),
+    pickupLng: row.pickup_lng === null ? undefined : Number(row.pickup_lng),
+    dropoffLat: row.dropoff_lat === null ? undefined : Number(row.dropoff_lat),
+    dropoffLng: row.dropoff_lng === null ? undefined : Number(row.dropoff_lng),
+    currentLat: row.current_lat === null ? undefined : Number(row.current_lat),
+    currentLng: row.current_lng === null ? undefined : Number(row.current_lng),
+    currentLocationNote: row.current_location_note || "",
   };
 }
 
@@ -74,6 +93,8 @@ function mapTrackingEvent(row: any) {
     eventStatus: row.event_status,
     locationNote: row.location_note || "",
     createdAt: row.created_at ? new Date(row.created_at).toLocaleString() : "",
+        latitude: row.latitude === null ? undefined : Number(row.latitude),
+    longitude: row.longitude === null ? undefined : Number(row.longitude),
   };
 }
 
@@ -145,7 +166,10 @@ export async function POST(request: NextRequest) {
   const dropoffCity = String(payload.dropoffCity || "");
   const routeNote = String(payload.routeNote || "");
   const adminNote = String(payload.adminNote || "");
-
+  const pickupLat = parseCoordinate(payload.pickupLat);
+  const pickupLng = parseCoordinate(payload.pickupLng);
+  const dropoffLat = parseCoordinate(payload.dropoffLat);
+  const dropoffLng = parseCoordinate(payload.dropoffLng);
   if (!orderId || !driverId) {
     return NextResponse.json(
       { message: "Order ID and driver ID are required." },
@@ -198,6 +222,13 @@ export async function POST(request: NextRequest) {
       admin_note: adminNote,
       assigned_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+            pickup_lat: pickupLat,
+      pickup_lng: pickupLng,
+      dropoff_lat: dropoffLat,
+      dropoff_lng: dropoffLng,
+      current_lat: pickupLat,
+      current_lng: pickupLng,
+      current_location_note: routeNote,
     })
     .select("*")
     .single();
@@ -214,6 +245,8 @@ export async function POST(request: NextRequest) {
     event_message: `${driver.full_name} has been assigned for ${assignmentType} delivery.`,
     event_status: "Assigned",
     location_note: routeNote,
+        latitude: pickupLat,
+    longitude: pickupLng,
   });
 
   await supabaseAdmin
@@ -259,7 +292,8 @@ export async function PUT(request: NextRequest) {
   const assignmentId = String(payload.assignmentId || "");
   const assignmentStatus = String(payload.assignmentStatus || "");
   const locationNote = String(payload.locationNote || "");
-
+  const latitude = parseCoordinate(payload.latitude);
+  const longitude = parseCoordinate(payload.longitude);
   if (!assignmentId || !assignmentStatus) {
     return NextResponse.json(
       { message: "Assignment ID and status are required." },
@@ -286,6 +320,9 @@ export async function PUT(request: NextRequest) {
     .update({
       assignment_status: assignmentStatus,
       updated_at: new Date().toISOString(),
+            current_lat: latitude,
+      current_lng: longitude,
+      current_location_note: locationNote,
     })
     .eq("id", assignmentId)
     .select("*, delivery_drivers(*)")
@@ -305,6 +342,8 @@ export async function PUT(request: NextRequest) {
     event_message: `${driver?.full_name || "Assigned driver"} updated delivery status to ${assignmentStatus}.`,
     event_status: assignmentStatus,
     location_note: locationNote,
+        latitude,
+    longitude,
   });
 
   if (assignmentStatus === "Out for Final Delivery") {

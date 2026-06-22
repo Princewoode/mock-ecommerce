@@ -28,6 +28,13 @@ function mapAssignment(row: any) {
     updatedAt: row.updated_at
       ? new Date(row.updated_at).toLocaleString()
       : "",
+          pickupLat: row.pickup_lat === null ? undefined : Number(row.pickup_lat),
+    pickupLng: row.pickup_lng === null ? undefined : Number(row.pickup_lng),
+    dropoffLat: row.dropoff_lat === null ? undefined : Number(row.dropoff_lat),
+    dropoffLng: row.dropoff_lng === null ? undefined : Number(row.dropoff_lng),
+    currentLat: row.current_lat === null ? undefined : Number(row.current_lat),
+    currentLng: row.current_lng === null ? undefined : Number(row.current_lng),
+    currentLocationNote: row.current_location_note || "",
   };
 }
 
@@ -42,6 +49,8 @@ function mapTrackingEvent(row: any) {
     eventStatus: row.event_status,
     locationNote: row.location_note || "",
     createdAt: row.created_at ? new Date(row.created_at).toLocaleString() : "",
+        latitude: row.latitude === null ? undefined : Number(row.latitude),
+    longitude: row.longitude === null ? undefined : Number(row.longitude),
   };
 }
 
@@ -135,5 +144,6 @@ export async function GET(request: NextRequest) {
     },
     assignments: (assignments || []).map(mapAssignment),
     trackingEvents: (trackingEvents || []).map(mapTrackingEvent),
+    
   });
 }

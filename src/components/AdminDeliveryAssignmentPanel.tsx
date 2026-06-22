@@ -37,6 +37,10 @@ type AssignmentDraft = {
   dropoffCity: string;
   routeNote: string;
   adminNote: string;
+    pickupLat: string;
+  pickupLng: string;
+  dropoffLat: string;
+  dropoffLng: string;
 };
 
 export default function AdminDeliveryAssignmentPanel() {
@@ -81,6 +85,10 @@ export default function AdminDeliveryAssignmentPanel() {
           dropoffCity: order.delivery?.city || "",
           routeNote: "",
           adminNote: "",
+          pickupLat: "",
+          pickupLng: "",
+          dropoffLat: "",
+          dropoffLng: "",
         };
       });
 
@@ -183,6 +191,10 @@ export default function AdminDeliveryAssignmentPanel() {
         dropoffCity: draft.dropoffCity,
         routeNote: draft.routeNote,
         adminNote: draft.adminNote,
+                pickupLat: draft.pickupLat,
+        pickupLng: draft.pickupLng,
+        dropoffLat: draft.dropoffLat,
+        dropoffLng: draft.dropoffLng,
       });
 
       setMessage(result.message || "Delivery assignment created.");
@@ -305,7 +317,9 @@ export default function AdminDeliveryAssignmentPanel() {
         pickupRegion: draft.pickupRegion,
         dropoffCity: draft.dropoffCity,
         dropoffRegion: draft.dropoffRegion,
+        
       })
+      
     : [];
             return (
               <div
@@ -501,7 +515,49 @@ export default function AdminDeliveryAssignmentPanel() {
                             className="rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
                           />
                         </div>
+<div className="grid gap-3 md:grid-cols-2">
+  <input
+    value={draft.pickupLat}
+    onChange={(event) =>
+      updateDraft(order.id, "pickupLat", event.target.value)
+    }
+    placeholder="Pickup latitude"
+    disabled={!ready}
+    className="rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+  />
 
+  <input
+    value={draft.pickupLng}
+    onChange={(event) =>
+      updateDraft(order.id, "pickupLng", event.target.value)
+    }
+    placeholder="Pickup longitude"
+    disabled={!ready}
+    className="rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+  />
+</div>
+
+<div className="grid gap-3 md:grid-cols-2">
+  <input
+    value={draft.dropoffLat}
+    onChange={(event) =>
+      updateDraft(order.id, "dropoffLat", event.target.value)
+    }
+    placeholder="Drop-off latitude"
+    disabled={!ready}
+    className="rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+  />
+
+  <input
+    value={draft.dropoffLng}
+    onChange={(event) =>
+      updateDraft(order.id, "dropoffLng", event.target.value)
+    }
+    placeholder="Drop-off longitude"
+    disabled={!ready}
+    className="rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+  />
+</div>
                         <textarea
                           value={draft.routeNote}
                           onChange={(event) =>
