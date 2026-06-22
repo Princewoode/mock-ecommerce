@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getAuthenticatedUser } from "@/lib/serverAuth";
 
-function mapAssignment(row: any) {
+function mapAssignment(row: any, hubNames: Map<string, string>) {
   const driver = row.delivery_drivers;
 
   return {
@@ -22,6 +22,20 @@ function mapAssignment(row: any) {
     dropoffCity: row.dropoff_city || "",
     routeNote: row.route_note || "",
     adminNote: row.admin_note || "",
+        originHubId: row.origin_hub_id || undefined,
+    originHubName: row.origin_hub_id
+      ? hubNames.get(row.origin_hub_id) || ""
+      : "",
+    destinationHubId: row.destination_hub_id || undefined,
+    destinationHubName: row.destination_hub_id
+      ? hubNames.get(row.destination_hub_id) || ""
+      : "",
+    legSequence: Number(row.leg_sequence || 1),
+    handoverStatus: row.handover_status || "Not Required",
+    handoverNote: row.handover_note || "",
+    handedOverAt: row.handed_over_at
+      ? new Date(row.handed_over_at).toLocaleString()
+      : "",
     assignedAt: row.assigned_at
       ? new Date(row.assigned_at).toLocaleString()
       : "",
@@ -116,7 +130,36 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  const hubIds = Array.from(
+    new Set(
+      (assignments || [])
+        .flatMap((assignment) => [
+          assignment.origin_hub_id,
+          assignment.destination_hub_id,
+        ])
+        .filter(Boolean)
+    )
+  ) as string[];
 
+  const hubNames = new Map<string, string>();
+
+  if (hubIds.length > 0) {
+    const { data: hubs, error: hubsError } = await supabaseAdmin
+      .from("delivery_hubs")
+      .select("id, hub_name")
+      .in("id", hubIds);
+
+    if (hubsError) {
+      return NextResponse.json(
+        { message: hubsError.message },
+        { status: 500 }
+      );
+    }
+
+    (hubs || []).forEach((hub) => {
+      hubNames.set(hub.id, hub.hub_name);
+    });
+  }
   const { data: trackingEvents, error: trackingError } = await supabaseAdmin
     .from("delivery_tracking_events")
     .select("*")
@@ -150,7 +193,9 @@ export async function GET(request: NextRequest) {
       paymentStatus: order.payment_status || "Pending",
       escrowStatus: order.escrow_status || "Held",
     },
-    assignments: (assignments || []).map(mapAssignment),
+  assignments: (assignments || []).map((assignment) =>
+  mapAssignment(assignment, hubNames)
+),
     trackingEvents: (trackingEvents || []).map(mapTrackingEvent),
     
   });

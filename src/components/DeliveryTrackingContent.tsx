@@ -259,7 +259,9 @@ export default function DeliveryTrackingContent({
                       <h3 className="mt-1 text-xl font-bold text-gray-900">
                         {assignment.driverName || "Assigned Driver"}
                       </h3>
-
+<p className="mt-1 text-sm text-gray-600">
+  Delivery leg: {assignment.legSequence || 1}
+</p>
                       <p className="mt-1 text-gray-600">
                         {assignment.driverVehicleType}
                         {assignment.driverVehicleNumber
@@ -289,7 +291,22 @@ export default function DeliveryTrackingContent({
                       Drop-off: {assignment.dropoffCity || "Not specified"},{" "}
                       {assignment.dropoffRegion || ""}
                     </p>
+{(assignment.originHubName || assignment.destinationHubName) && (
+  <div className="mt-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+    <p>
+      Origin hub: {assignment.originHubName || "Direct pickup"}
+    </p>
 
+    <p className="mt-1">
+      Destination hub:{" "}
+      {assignment.destinationHubName || "Direct customer delivery"}
+    </p>
+
+    <p className="mt-1">
+      Handover status: {assignment.handoverStatus || "Not required"}
+    </p>
+  </div>
+)}
                     {assignment.routeNote && (
                       <p className="mt-2 text-sm text-gray-600">
                         Route note: {assignment.routeNote}

@@ -12,6 +12,7 @@ import AdminDeliveryReadinessPanel from "@/components/AdminDeliveryReadinessPane
 import AdminNotificationPanel from "@/components/AdminNotificationPanel";
 import AdminDeliveryDriverManager from "@/components/AdminDeliveryDriverManager";
 import AdminDeliveryHubManager from "@/components/AdminDeliveryHubManager";
+import AdminMultiLegDispatchPanel from "@/components/AdminMultiLegDispatchPanel";
 import AdminDeliveryAssignmentPanel from "@/components/AdminDeliveryAssignmentPanel";
 const ADMIN_PASSWORD = "admin123";
 const ADMIN_AUTH_KEY = "mockAdminLoggedIn";
@@ -125,6 +126,7 @@ export default function ProtectedAdmin() {
 <AdminNotificationPanel />
 <AdminDeliveryDriverManager />
 <AdminDeliveryHubManager />
+<AdminMultiLegDispatchPanel />
 <AdminDeliveryRouteManager />
 <AdminDeliveryAssignmentPanel />
 <AdminDeliveryReadinessPanel />
