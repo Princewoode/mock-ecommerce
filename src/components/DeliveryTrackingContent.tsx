@@ -51,9 +51,17 @@ export default function DeliveryTrackingContent({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadTracking();
-  }, [orderId]);
+ useEffect(() => {
+  void loadTracking();
+
+  const refreshInterval = window.setInterval(() => {
+    void loadTracking();
+  }, 60000);
+
+  return () => {
+    window.clearInterval(refreshInterval);
+  };
+}, [orderId]);
 
   async function loadTracking() {
     try {

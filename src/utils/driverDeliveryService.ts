@@ -36,6 +36,8 @@ export type DriverDeliveryAssignment = {
   currentLat?: number;
   currentLng?: number;
   currentLocationNote?: string;
+    currentAccuracyMeters?: number;
+  lastLocationAt?: string;
 };
 
 export type DriverDeliveryResponse = {
@@ -122,6 +124,38 @@ export async function updateDriverDeliveryStatus({
       locationNote,
       latitude,
       longitude,
+    }),
+  });
+
+  return handleResponse(response);
+}
+export async function updateDriverLiveLocation({
+  assignmentId,
+  latitude,
+  longitude,
+  accuracy,
+  locationNote,
+}: {
+  assignmentId: string;
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  locationNote?: string;
+}) {
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch("/api/driver/deliveries", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders,
+    },
+    body: JSON.stringify({
+      assignmentId,
+      latitude,
+      longitude,
+      accuracy,
+      locationNote,
     }),
   });
 

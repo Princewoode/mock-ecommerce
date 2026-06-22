@@ -175,6 +175,7 @@ export type DeliveryDriverProfile = {
   currentLng?: number;
   lastLocationNote?: string;
   lastLocationAt?: string;
+    currentAccuracyMeters?: number;
 };
 export type DeliveryAssignment = {
   id: string;
@@ -202,6 +203,8 @@ export type DeliveryAssignment = {
   currentLat?: number;
   currentLng?: number;
   currentLocationNote?: string;
+    currentAccuracyMeters?: number;
+  lastLocationAt?: string;
 };
 
 export type DeliveryTrackingEvent = {

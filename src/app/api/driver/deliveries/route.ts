@@ -25,6 +25,14 @@ function parseCoordinate(value: unknown) {
 
   return numericValue;
 }
+function isWithinGhana(latitude: number, longitude: number) {
+  return (
+    latitude >= 4 &&
+    latitude <= 12 &&
+    longitude >= -3.6 &&
+    longitude <= 1.5
+  );
+}
 async function getVerifiedDriver(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
 
@@ -98,6 +106,14 @@ function mapAssignment(row: any) {
     currentLocationNote: row.current_location_note || "",
         }
       : null,
+          currentAccuracyMeters:
+      row.current_accuracy_meters === null
+        ? undefined
+        : Number(row.current_accuracy_meters),
+
+    lastLocationAt: row.last_location_at
+      ? new Date(row.last_location_at).toLocaleString()
+      : "",
   };
 }
 
@@ -267,6 +283,149 @@ export async function PUT(request: NextRequest) {
           error instanceof Error
             ? error.message
             : "Failed to update delivery status.",
+      },
+      { status: 401 }
+    );
+  }
+  
+}
+export async function PATCH(request: NextRequest) {
+  try {
+    const driver = await getVerifiedDriver(request);
+    const payload = await request.json();
+
+    const assignmentId = String(payload.assignmentId || "");
+    const latitude = parseCoordinate(payload.latitude);
+    const longitude = parseCoordinate(payload.longitude);
+    const accuracy = parseCoordinate(payload.accuracy);
+    const locationNote = String(payload.locationNote || "").trim();
+
+    if (!assignmentId || latitude === null || longitude === null) {
+      return NextResponse.json(
+        {
+          message:
+            "Delivery assignment, latitude, and longitude are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!isWithinGhana(latitude, longitude)) {
+      return NextResponse.json(
+        {
+          message:
+            "Location is outside the supported Ghana delivery operating area.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (accuracy !== null && (accuracy < 0 || accuracy > 10000)) {
+      return NextResponse.json(
+        { message: "Location accuracy value is invalid." },
+        { status: 400 }
+      );
+    }
+
+    if (locationNote.length > 280) {
+      return NextResponse.json(
+        { message: "Location note cannot exceed 280 characters." },
+        { status: 400 }
+      );
+    }
+
+    const { data: assignment, error: assignmentError } = await supabaseAdmin
+      .from("delivery_assignments")
+      .select(
+        "id, order_id, assignment_status, current_location_note"
+      )
+      .eq("id", assignmentId)
+      .eq("driver_id", driver.id)
+      .single();
+
+    if (assignmentError || !assignment) {
+      return NextResponse.json(
+        {
+          message:
+            assignmentError?.message ||
+            "Delivery assignment was not found for this driver.",
+        },
+        { status: 404 }
+      );
+    }
+
+    if (
+      ["Delivered", "Failed Attempt"].includes(assignment.assignment_status)
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Location sharing is unavailable for completed or failed delivery assignments.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const timestamp = new Date().toISOString();
+
+    const savedLocationNote =
+      locationNote || assignment.current_location_note || "";
+
+    const { error: updateAssignmentError } = await supabaseAdmin
+      .from("delivery_assignments")
+      .update({
+        current_lat: latitude,
+        current_lng: longitude,
+        current_accuracy_meters: accuracy,
+        current_location_note: savedLocationNote,
+        last_location_at: timestamp,
+        updated_at: timestamp,
+      })
+      .eq("id", assignmentId)
+      .eq("driver_id", driver.id);
+
+    if (updateAssignmentError) {
+      return NextResponse.json(
+        { message: updateAssignmentError.message },
+        { status: 500 }
+      );
+    }
+
+    const { error: updateDriverError } = await supabaseAdmin
+      .from("delivery_drivers")
+      .update({
+        current_lat: latitude,
+        current_lng: longitude,
+        current_accuracy_meters: accuracy,
+        last_location_note: savedLocationNote,
+        last_location_at: timestamp,
+      })
+      .eq("id", driver.id);
+
+    if (updateDriverError) {
+      return NextResponse.json(
+        { message: updateDriverError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: "Current driver location saved successfully.",
+      location: {
+        latitude,
+        longitude,
+        accuracy,
+        locationNote: savedLocationNote,
+        updatedAt: new Date(timestamp).toLocaleString(),
+      },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to save current driver location.",
       },
       { status: 401 }
     );

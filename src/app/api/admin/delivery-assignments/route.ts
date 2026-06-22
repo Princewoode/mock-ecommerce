@@ -79,6 +79,14 @@ function mapAssignment(row: any) {
     currentLat: row.current_lat === null ? undefined : Number(row.current_lat),
     currentLng: row.current_lng === null ? undefined : Number(row.current_lng),
     currentLocationNote: row.current_location_note || "",
+        currentAccuracyMeters:
+      row.current_accuracy_meters === null
+        ? undefined
+        : Number(row.current_accuracy_meters),
+
+    lastLocationAt: row.last_location_at
+      ? new Date(row.last_location_at).toLocaleString()
+      : "",
   };
 }
 
