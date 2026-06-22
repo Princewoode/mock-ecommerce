@@ -205,6 +205,14 @@ export type DeliveryAssignment = {
   currentLocationNote?: string;
     currentAccuracyMeters?: number;
   lastLocationAt?: string;
+    originHubId?: string;
+  originHubName?: string;
+  destinationHubId?: string;
+  destinationHubName?: string;
+  legSequence?: number;
+  handoverStatus?: string;
+  handoverNote?: string;
+  handedOverAt?: string;
 };
 
 export type DeliveryTrackingEvent = {
@@ -251,4 +259,40 @@ export type DeliveryRoute = {
   originLng?: number;
   destinationLat?: number;
   destinationLng?: number;
+};
+export type DeliveryHub = {
+  id: string;
+  hubName: string;
+  hubType:
+    | "Cross-Dock"
+    | "Fulfillment Centre"
+    | "Inter-city Transfer"
+    | "Final Mile Station";
+  region: string;
+  city: string;
+  address?: string;
+  contactPhone?: string;
+  managerName?: string;
+  managerPhone?: string;
+  latitude?: number;
+  longitude?: number;
+  operatingHours?: string;
+  isActive: boolean;
+  adminNote?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type DeliveryHandoverEvent = {
+  id: string;
+  orderId: string;
+  fromAssignmentId?: string;
+  toAssignmentId?: string;
+  hubId?: string;
+  hubName?: string;
+  eventType: string;
+  eventNote?: string;
+  createdByRole: "admin" | "driver" | "hub_staff";
+  createdByName?: string;
+  createdAt: string;
 };
